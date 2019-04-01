@@ -1,4 +1,4 @@
-pragma solidity ^0.4.16;
+pragma solidity >=0.4.22 <0.6.0;
 
 contract owned {
     address public owner;
@@ -16,12 +16,12 @@ contract owned {
 contract tokenRecipient {
     event LogReceivedEther(address sender, uint amount);
     event LogReceivedTokens(address _from, uint256 _value, address _token, bytes _extraData);
-    function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData) public {
+    function receiveApproval(address _from, uint256 _value, address _token, bytes memory _extraData) public {
         Token t = Token(_token);
-        require(t.transferFrom(_from, this, _value));
+        require(t.transferFrom(_from, address(this), _value));
         emit LogReceivedTokens(_from, _value, _token, _extraData);
     }
-    function () payable  public {
+    function () payable  external {
         emit LogReceivedEther(msg.sender, msg.value);
     }
 }
@@ -34,14 +34,16 @@ contract Congress is owned, tokenRecipient {
     uint public debatingPeriodInMinutes;
     int public majorityMargin;
     Proposal[] public proposals;
-    uint public numProposals;
+    //uint public numProposals;
     mapping (address => Member) members;
+
     /**events**/
-    event LogProposalAdded(uint proposalID, address recipient, uint amount, string description);
+    event LogProposalAdded(uint proposalID, address recipient, uint amount, string description, uint numProposals);
     event LogVoted(uint indexed proposalID, bool position, address voter, string justification);
-    event LogProposalTallied(uint indexed proposalID, int result, uint quorum, bool active);
-    event LogMembershipChanged(address member, bool indexed isMember, uint members);
+    event LogProposalTallied(uint indexed proposalID, int result, uint quorum, bool indexed active);
+    event LogMembershipChanged(address indexed member, bool indexed isMember, uint members);
     event LogChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, int newMajorityMargin);
+
     /**proposal**/
     struct Proposal {
         address recipient;
@@ -66,11 +68,11 @@ contract Congress is owned, tokenRecipient {
         address voter;
         string justification;
     }
-    /** Modifier that allows only shareholders to vote and create new proposals**/
     modifier onlyMembers {
         require(members[msg.sender].isMember == true);
         _;
     }
+
     /**constructor**/
     constructor (
         uint minimumQuorumForProposals,
@@ -78,11 +80,9 @@ contract Congress is owned, tokenRecipient {
         int marginOfVotesForMajority
     )  payable public {
         changeVotingRules(minimumQuorumForProposals, minutesForDebate, marginOfVotesForMajority);
-        addMember(0, "");
         addMember(owner, 'founder');
-	numberMembers = 1;
     }
-    function addMember(address targetMember, string memberName) onlyOwner public {
+    function addMember(address targetMember, string memory memberName) onlyOwner public {
 	require(members[targetMember].isMember == false);
         members[targetMember] = Member({isMember: true, memberSince: now, name: memberName});
 	numberMembers += 1;
@@ -124,8 +124,8 @@ contract Congress is owned, tokenRecipient {
     function newProposal(
         address beneficiary,
         uint weiAmount,
-        string jobDescription,
-        bytes transactionBytecode
+        string memory jobDescription,
+        bytes memory transactionBytecode
     )
         onlyMembers public
         returns (uint proposalID)
@@ -140,30 +140,9 @@ contract Congress is owned, tokenRecipient {
         p.executed = false;
         p.proposalPassed = false;
         p.numberOfVotes = 0;
-        emit LogProposalAdded(proposalID, beneficiary, weiAmount, jobDescription);
-        numProposals = proposalID+1;
+        emit LogProposalAdded(proposalID, beneficiary, weiAmount, jobDescription, proposals.length-1);
         return proposalID;
     }
-    /**
-     * Add proposal in Ether
-     * Propose to send `etherAmount` ether to `beneficiary` for `jobDescription`. `transactionBytecode ? Contains : Does not contain` code.
-     * This is a convenience function to use if the amount to be given is in round number of ether units.
-     * @param beneficiary who to send the ether to
-     * @param etherAmount amount of ether to send
-     * @param jobDescription Description of job
-     * @param transactionBytecode bytecode of transaction
-     */
-    /*function newProposalInEther(
-        address beneficiary,
-        uint etherAmount,
-        string jobDescription,
-        bytes transactionBytecode
-    )
-        onlyMembers public
-        returns (uint proposalID)
-    {
-        return newProposal(beneficiary, etherAmount * 1 ether, jobDescription, transactionBytecode);
-    }*/
     /**
      * Check if a proposal code matches
      * @param proposalNumber ID number of the proposal to query
@@ -175,9 +154,9 @@ contract Congress is owned, tokenRecipient {
         uint proposalNumber,
         address beneficiary,
         uint weiAmount,
-        bytes transactionBytecode
+        bytes memory transactionBytecode
     )
-        constant public
+        view public
         returns (bool codeChecksOut)
     {
         Proposal storage p = proposals[proposalNumber];
@@ -193,7 +172,7 @@ contract Congress is owned, tokenRecipient {
     function vote(
         uint proposalNumber,
         bool supportsProposal,
-        string justificationText
+        string memory justificationText
     )
         onlyMembers public
         returns (uint voteID)
@@ -218,21 +197,17 @@ contract Congress is owned, tokenRecipient {
      * @param proposalNumber proposal number
      * @param transactionBytecode optional: if the transaction contained a bytecode, you need to send it
      */
-    function executeProposal(uint proposalNumber, bytes transactionBytecode) public {
+    function executeProposal(uint proposalNumber, bytes memory transactionBytecode) public payable {
         Proposal storage p = proposals[proposalNumber];
         require(now > p.minExecutionDate  
-        /** If it is past the voting deadline **/
             && !p.executed
-	    /** and it has not already been executed **/
             && p.proposalHash == keccak256(abi.encodePacked(p.recipient, p.amount, transactionBytecode))
-	    /** and the supplied code matches the proposal **/
             && p.numberOfVotes >= minimumQuorum);
-	    /** and a minimum quorum has been reached...**/
-        /** ...then execute result**/
         if (p.currentResult > majorityMargin) {
             /** Proposal passed; execute the transaction **/
             p.executed = true; // Avoid recursive calling
-            require(p.recipient.call.value(p.amount)(transactionBytecode));
+            (bool success, ) = p.recipient.call.value(p.amount)(transactionBytecode);
+            require(success);
             p.proposalPassed = true;
         } else {
             /** Proposal failed **/
@@ -241,5 +216,3 @@ contract Congress is owned, tokenRecipient {
         emit LogProposalTallied(proposalNumber, p.currentResult, p.numberOfVotes, p.proposalPassed);
     }
 }
-
-

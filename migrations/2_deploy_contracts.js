@@ -1,6 +1,6 @@
-var Congress = artifacts.require("./Congress.sol");
+const Congress = artifacts.require("./Congress.sol");
 
-module.exports = function(deployer) {
-  deployer.deploy(Congress, 2, 5, 1);
+module.exports = async function(deployer) {
+  await deployer.deploy(Congress, 2, 5, 1);
 };
 
