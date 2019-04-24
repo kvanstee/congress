@@ -1,0 +1,32 @@
+{
+  "name": "congress",
+  "version": "1.0.0",
+  "description": "community land trust",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "web3": "^1.0.0-beta.48",
+    "webpack": "^4.28.3",
+    "css-loader": "^0.28.11",
+    "style-loader": "^0.13.1"
+  },
+  "devDependencies": {
+    "webpack-cli": "^3.2.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kvanstee/congress.git"
+  },
+  "author": "kvanstee",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kvanstee/congress/issues"
+  },
+  "homepage": "https://github.com/kvanstee/congress#readme"
+}

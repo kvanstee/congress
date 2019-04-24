@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CLT</title>
+  <script type="text/javascript" src="./bundle.js"></script>
+  <!script type="module" src="../../src/javascripts/index.js"></script!>
+</head>
+  <body>
+  <h1> COMMUNITY LAND TRUST </h1>
+    <div id="content">
+      <button onclick="App.donate()" href="#">DONATE</button><input type="number" id="donate" placeholder="amount"><select id="crypto_currency"><option value="ETH">ETH</option><option value="DAI">DAI</option></select><br>
+      <div id="forOwner" class="hidden">
+        <button onclick="App.add_member()" href="#">ADD MEMBER</button><input id="newMemberAddress" placeholder="address"><input id="newMemberName" placeholder="name"><br>
+        <button onclick="App.remove_member()" href="#">REMOVE MEMBER</button><input id="removeMember" placeholder="address"><br>
+        <button onclick="App.change_voting_rules()" href="#">CHANGE VOTING RULES</button><input type="number" id="minQuorum" placeholder="minumum quorum"><input type="number" id="minutesForDebate" placeholder="minutes for debate"><input type="number" id="majorityMargin" placeholder="majority margin"><br>
+	<button onclick="App.change_ownership()" href="#">TRANSFER OWNERSHIP</button><input id="newOwner" placeholder="address"><br>
+      </div>
+      <div id="forMembers" class="hidden">
+        <button onclick="App.new_proposal()" href="#">NEW PROPOSAL</button><input id="beneficiary" placeholder="beneficiary"><input type="number" id="amount" placeholder="amount"><input  id="jobDescription" placeholder="job description"><input id="bytecode" placeholder="transaction bytecode"><br>
+        <button onclick="App.vote()" href="#">VOTE</button><input id="proposalNumber" placeholder="proposal number"><input id="supportsProposal" placeholder="true or false"><input id="justificationText" placeholder="justification"><br>
+	<button onclick="App.check_proposal()" href="#">CHECK PROPOSAL</button><input id="proposalNumber1" type="numner" placeholder="proposal number"><input  id="beneficiary1" placeholder="beneficiary"><input id="amount1" type="number" placeholder="wei amount"><input id="bytecode2" placeholder="transaction bytecode"><br>
+	<button onclick="App.execute_proposal()" href="#">EXECUTE PROPOSAL</button><input id="proposalNumber2" type="number" placeholder="proposal number"><input id="bytecode1" placeholder="transaction bytecode"><br>
+	<button onclick="App.proposals()" href="#">PROPOSALS</button><input type="number" id="proposalNumber3" placeholder="proposal number"><br>
+      </div>
+    </div>
+  </body>
+</html>
