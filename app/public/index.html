@@ -17,11 +17,22 @@
 	<button onclick="App.change_ownership()" href="#">TRANSFER OWNERSHIP</button><input id="newOwner" placeholder="address"><br>
       </div>
       <div id="forMembers" class="hidden">
-        <button onclick="App.new_proposal()" href="#">NEW PROPOSAL</button><input id="beneficiary" placeholder="beneficiary"><input type="number" id="amount" placeholder="amount"><input  id="jobDescription" placeholder="job description"><input id="bytecode" placeholder="transaction bytecode"><br>
-        <button onclick="App.vote()" href="#">VOTE</button><input id="proposalNumber" placeholder="proposal number"><input id="supportsProposal" placeholder="true or false"><input id="justificationText" placeholder="justification"><br>
-	<button onclick="App.check_proposal()" href="#">CHECK PROPOSAL</button><input id="proposalNumber1" type="numner" placeholder="proposal number"><input  id="beneficiary1" placeholder="beneficiary"><input id="amount1" type="number" placeholder="wei amount"><input id="bytecode2" placeholder="transaction bytecode"><br>
+        <button onclick="App.new_proposal()" href="#">NEW PROPOSAL</button>
+          <select id="crypto_curr"><option value="ETH">ETH</option><option value="DAI">DAI</option></select>
+          <input id="beneficiary" placeholder="beneficiary">
+          <input type="number" id="Amount" placeholder="amount ether or dai">
+          <input  id="jobDescription" placeholder="job description"><br>
+        <button onclick="App.vote()" href="#">VOTE</button>
+          <input id="proposalNumber" placeholder="proposal number">
+          <input type="radio" name="vote" value="true"><label for="true">TRUE</label>
+          <input type="radio" name="vote" value="false"><label for="false">FALSE</label>
+          <input id="justificationText" placeholder="justification"><br>
+	<button onclick="App.check_proposal()" href="#">CHECK DAI PROPOSAL</button><input id="proposalNumber1" type="number" placeholder="proposal number"><input  id="beneficiary1" placeholder="beneficiary"><input id="amount1" type="number" placeholder="amount dai"><input id="bytecode2" placeholder="transaction bytecode"><br>
 	<button onclick="App.execute_proposal()" href="#">EXECUTE PROPOSAL</button><input id="proposalNumber2" type="number" placeholder="proposal number"><input id="bytecode1" placeholder="transaction bytecode"><br>
 	<button onclick="App.proposals()" href="#">PROPOSALS</button><input type="number" id="proposalNumber3" placeholder="proposal number"><br>
+	<table>
+          <tbody id="activeProposals"></tbody>
+	</table>
       </div>
     </div>
   </body>

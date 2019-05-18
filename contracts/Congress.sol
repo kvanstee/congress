@@ -29,19 +29,18 @@ interface Token {
     function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
 }
 contract Congress is owned, tokenRecipient {
-    uint public numberMembers;
     uint public minimumQuorum;
     uint public debatingPeriodInMinutes;
     int public majorityMargin;
     Proposal[] public proposals;
-    //uint public numProposals;
-    mapping (address => Member) members;
+    uint public numProposals;
+    mapping (address => Member) public members;
 
     /**events**/
     event LogProposalAdded(uint proposalID, address recipient, uint amount, string description, uint numProposals);
-    event LogVoted(uint indexed proposalID, bool position, address voter, string justification);
+    event LogVoted(uint indexed proposalID, bool position, address indexed voter, string justification);
     event LogProposalTallied(uint indexed proposalID, int result, uint quorum, bool indexed active);
-    event LogMembershipChanged(address indexed member, bool indexed isMember, uint members);
+    event LogMembershipChanged(address indexed member, bool indexed isMember);
     event LogChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, int newMajorityMargin);
 
     /**proposal**/
@@ -55,7 +54,7 @@ contract Congress is owned, tokenRecipient {
         uint numberOfVotes;
         int currentResult;
         bytes32 proposalHash;
-        Vote[] votes;
+        //Vote[] votes;
         mapping (address => bool) voted;
     }
     struct Member {
@@ -80,20 +79,18 @@ contract Congress is owned, tokenRecipient {
         int marginOfVotesForMajority
     )  payable public {
         changeVotingRules(minimumQuorumForProposals, minutesForDebate, marginOfVotesForMajority);
-        addMember(owner, 'founder');
+        addMember(owner, 'Keith Van Steenwyk');
     }
     function addMember(address targetMember, string memory memberName) onlyOwner public {
 	require(members[targetMember].isMember == false);
         members[targetMember] = Member({isMember: true, memberSince: now, name: memberName});
-	numberMembers += 1;
-        emit LogMembershipChanged(targetMember, true, numberMembers);
+        emit LogMembershipChanged(targetMember, true);
     }
 
     function removeMember(address targetMember) onlyOwner public {
         require(members[targetMember].isMember == true);
 	members[targetMember].isMember == false;
-	numberMembers -= 1;
-	emit LogMembershipChanged(targetMember, false, numberMembers);
+	emit LogMembershipChanged(targetMember, false);
     }
     /**
      * Change voting rules
@@ -140,7 +137,8 @@ contract Congress is owned, tokenRecipient {
         p.executed = false;
         p.proposalPassed = false;
         p.numberOfVotes = 0;
-        emit LogProposalAdded(proposalID, beneficiary, weiAmount, jobDescription, proposals.length-1);
+        emit LogProposalAdded(proposalID, beneficiary, weiAmount, jobDescription, proposals.length);
+	numProposals = proposalID+1;
         return proposalID;
     }
     /**
