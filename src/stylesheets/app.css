@@ -1,4 +1,17 @@
-.hidden {
+table {
+  display: inline-table;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 2px #DDD solid; padding: 2px; cursor: pointer; width: 170px;
+}
+.executable {
+  background-color: lightgreen;
+}
+.pending {
+    background-color: yellow;
+}.hidden {
     display: none;
 }
 .shown {

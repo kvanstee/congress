@@ -3,8 +3,8 @@ import {default as Web3} from 'web3';
 require('../stylesheets/app.css');
 
 const congress_abi = require('../../build/contracts/Congress.json').abi;
-const congress_addr = '0x89b093C067Dce8B9286d557e5d6041b2021925C9';
-const dai_token_addr = '0x9B555b5781Ed95E723F20dDc3B796B85c6106FdF';
+const congress_addr = '0x6d04831fe9C8066ae6A532172F4cAF958e36B9C0';
+const dai_token_addr = '0x5138F0CD42BaEa4062dA9FF0D72adc60dBbB19b3';
 const dai_token_abi = require('../../build/contracts/TokenERC20_min.json').abi;
 let account;
 let congress;
@@ -14,7 +14,8 @@ var members = [];
 window.App = {
   start: function(_account) {
     account = _account;
-    congress.LogMembershipChanged({}, {fromBlock:0}, function(err, change) {
+    //create array of members
+    congress.LogMembershipChanged({},  function(err, change) {
       if (err) return err;
       if (change.args.member === account) {
 	if (!change.args.isMember) {
@@ -25,12 +26,6 @@ window.App = {
 	  members.push(change.args.member);
           document.getElementById("forMembers").className = 'shown';
 	  console.log("you are a member");
-          congress.owner.call({from:account}, function(err, owner) {
- 	    if (owner === account) {
-	      document.getElementById("forOwner").className = 'shown';
-	      console.log("you are owner");
-	    }
-          })
 	}
       }
       else {
@@ -46,7 +41,16 @@ window.App = {
         }
       }
     })
-    congress.LogProposalAdded({}, {fromBlock:0}, function(err, res) {
+    congress.members.call(account,  function(err,res) {
+      if (res[0]) {
+        document.getElementById("forMembers").className = 'shown';
+        congress.owner.call(function(err,res) {
+          if (res === account) document.getElementById("forOwner").className = 'shown';
+	})
+      }
+      else document.getElementById("forMembers").className = 'hidden';
+    })
+    congress.LogProposalAdded({}, {fromBlock:0},  function(err, res) {
       if (err) return err;
       congress.proposals.call(res.args.proposalID, {from:account}, function(err, proposal) {
 	if (err) return err;
@@ -55,33 +59,31 @@ window.App = {
         _proposal.id = res.args.proposalID;
         var proposal_elements = _proposal.getElementsByTagName('td');
         if (proposal[4]) return;
-        proposal_elements[0].innerHTML = res.args.proposalID;
+        proposal_elements[0].innerHTML = _proposal.id;
         proposal_elements[1].innerHTML = proposal[0]; //recipient
-        proposal_elements[2].innerHTML = proposal[1]; //amount
+        proposal_elements[2].innerHTML = proposal[1]/1e18; //amount
         proposal_elements[3].innerHTML = proposal[2]; //description
         proposal_elements[4].innerHTML = Number(proposal[6]); //number votes
 	proposal_elements[5].innerHTML = Number(proposal[7]); //progressive vote
-	var voted = congress.LogVoted({proposalID:_proposal.id ,voter:account}, {fromBlock:res.blockNumber, from:account});
-	voted.get(function(err, res) {
+	var voted = congress.LogVoted({proposalID:_proposal.id ,voter:account}, {fromBlock:res.blockNumber});
+	voted.get( function(err, res) {
 	  if (err) return err;
 	  if (res.length === 0) proposal_elements[6].innerHTML = "<button onclick= 'App.vote(" + _proposal.id + ")' href='#'>VOTE</button><input type='radio' name='vote' value='true'><label for='true'>YES</label><input type='radio' name='vote' value='false'><label for='false'>NO</label><input id='justification' placeholder='justificationText'>";
        	  else  proposal_elements[6].innerHTML = "you have voted";
 	})
 	document.getElementById("activeProposals").append(_proposal);
-        congress.LogVoted({proposalID:_proposal.id}, {from:account}, function(err, vote) {
+        congress.LogVoted({proposalID:_proposal.id},  function(err, vote) {
           if (err) return err;
-       	  var number_votes = proposal[6];
-          number_votes++;
-	  proposal_elements[4].innerHTML = number_votes;
-  	  var progressive_vote = Number(proposal_elements[5].innerHTML);
-          if (vote.args.position) progressive_vote++;
-          else if (!vote.args.position) progressive_vote--;
-	  proposal_elements[5].innerHTML = progressive_vote;
-          if (vote.args.voter == account) proposal_elements[6].innerHTML = "you have voted"; 
+	  congress.proposals.call(_proposal.id, function(err, proposal) {
+            if (err) return err;
+	    proposal_elements[4].innerHTML = Number(proposal[6]);
+	    proposal_elements[5].innerHTML = Number(proposal[7]);
+	  })
+          if (vote.args.voter === account) proposal_elements[6].innerHTML = "you have voted"; 
         })
       })
     })
-    congress.LogProposalTallied({fromBlock:0}, function(err, proposal) {
+    congress.LogProposalTallied({fromBlock:0},  function(err, proposal) {
       if (err) return err;
       console.log("proposal votes tallied. Result: " + proposal.args);
     })
@@ -95,13 +97,13 @@ window.App = {
   donate: function() {
     var donation = document.getElementById("donate").value*1e18;
     if (document.getElementById("crypto_currency").value == "ETH") {
-      web3.eth.sendTransaction({from:account, to:congress_addr, value:donation}, function(err, res) {
+      web3.eth.sendTransaction({from:account, to:congress_addr, value:donation},  function(err, res) {
         if (err) return err;
         console.log("ether donation successfull!");
       })
     }
     if (document.getElementById("crypto_currency").value == "DAI") {;
-      dai.approveAndCall(congress_addr, donation, '0x', {from:account}, function(err, res) {
+      dai.approveAndCall(congress_addr, donation, '0x', {from:account},  function(err, res) {
         if (err) return err;
         console.log(donation/1e18 + "dai donation successfull!");
       })
@@ -156,11 +158,11 @@ window.App = {
     })
   },
   supportsProposal: function() {
-    if (document.querySelector('input[name="vote"]:checked').value == "false") return false;
+    if (document.querySelector('input[name="vote"]:checked').value === "false") return false;
     else return true;
   },
   vote: function(proposalNumber) {
-    var _justificationText = document.getElementById("justificationText").value;
+    var _justificationText = document.getElementById("justification").value;
     congress.vote(proposalNumber, this.supportsProposal(), _justificationText, {from:account}, function(err, res) {
       if (err) return err;
     })
@@ -170,10 +172,13 @@ window.App = {
     var beneficiary = document.getElementById("beneficiary1").value;
     var daiAmount = document.getElementById("amount1").value*1e18;
     var bytecode = dai.transfer.getData(beneficiary, daiAmount);
-    document.getElementById("bytecode2").innerHTML = bytecode;
     beneficiary = dai_token_addr;
-    congress.checkProposalCode(proposalNumber, beneficiary, 0, bytecode, {from:account}, function(err, res) {
+    congress.checkProposalCode(proposalNumber, beneficiary, 0, bytecode, function(err, res) {
       if (err) return err;
+      if (res) {
+        document.getElementById("bytecode1").value = bytecode;
+        document.getElementById("proposalNumber2").value = proposalNumber;
+      }
       console.log(res);
     })
   },
@@ -182,12 +187,12 @@ window.App = {
     var _transactionBytecode = document.getElementById("bytecode1").value;
     congress.executeProposal(_proposalNumber, _transactionBytecode, {from:account, gas:1e6}, function(err, res) {
       if (err) return err;
-      console.log("proposal executed!" + dai.balanceOf(congress_addr));
+      console.log("proposal executed!");
     })
   },
 },
 
-window.addEventListener('load', async function() {
+window.addEventListener('load', async  function() {
   // Checking if Web3 has been injected by the browser (Mist/MetaMask)
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
