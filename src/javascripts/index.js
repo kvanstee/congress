@@ -3,8 +3,8 @@ import {default as Web3} from 'web3';
 require('../stylesheets/app.css');
 
 const congress_abi = require('../../build/contracts/Congress.json').abi;
-const congress_addr = '0x6d04831fe9C8066ae6A532172F4cAF958e36B9C0';
-const dai_token_addr = '0x5138F0CD42BaEa4062dA9FF0D72adc60dBbB19b3';
+const congress_addr = '0xB94195F0BAfc3815D9716ad5fc7d18B4978566Dc';
+const dai_token_addr = '0x949032245724b533a7CB40c03C7A9946778c541C';
 const dai_token_abi = require('../../build/contracts/TokenERC20_min.json').abi;
 let account;
 let congress;
@@ -68,8 +68,14 @@ window.App = {
 	var voted = congress.LogVoted({proposalID:_proposal.id ,voter:account}, {fromBlock:res.blockNumber});
 	voted.get( function(err, res) {
 	  if (err) return err;
-	  if (res.length === 0) proposal_elements[6].innerHTML = "<button onclick= 'App.vote(" + _proposal.id + ")' href='#'>VOTE</button><input type='radio' name='vote' value='true'><label for='true'>YES</label><input type='radio' name='vote' value='false'><label for='false'>NO</label><input id='justification' placeholder='justificationText'>";
-       	  else  proposal_elements[6].innerHTML = "you have voted";
+	  if (res.length === 0) {
+            proposal_elements[6].innerHTML = "<button onclick= 'App.vote(" + _proposal.id + ")' href='#'>VOTE</button><input type='radio' name='vote' value='true'><label for='true'>YES</label><input type='radio' name='vote' value='false'><label for='false'>NO</label>"
+	    proposal_elements[7].innerHTML = "<input id='justification' class='shown' placeholder='justification text'>";
+	  }
+       	  else  {
+	    proposal_elements[6].innerHTML = "you have voted"; //<button onclick='checkProposal()' href='#'>check proposal</button>";
+	    document.getElementByID("justification").className = "hidden";
+	  }
 	})
 	document.getElementById("activeProposals").append(_proposal);
         congress.LogVoted({proposalID:_proposal.id},  function(err, vote) {
@@ -79,7 +85,8 @@ window.App = {
 	    proposal_elements[4].innerHTML = Number(proposal[6]);
 	    proposal_elements[5].innerHTML = Number(proposal[7]);
 	  })
-          if (vote.args.voter === account) proposal_elements[6].innerHTML = "you have voted"; 
+          if (vote.args.voter === account) proposal_elements[6].innerHTML = "you have voted";
+	  document.getElementByID("justification").className = "hidden";
         })
       })
     })
