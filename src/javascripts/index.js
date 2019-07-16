@@ -1,21 +1,23 @@
-import {default as Web3} from 'web3';
-//var Web3 = require('web3');
 require('../stylesheets/app.css');
 
-const congress_abi = require('../../build/contracts/Congress.json').abi;
-const congress_addr = '0xB94195F0BAfc3815D9716ad5fc7d18B4978566Dc';
-const dai_token_addr = '0x949032245724b533a7CB40c03C7A9946778c541C';
-const dai_token_abi = require('../../build/contracts/TokenERC20_min.json').abi;
+const congress_abi = require('../../build/contracts/Congress_abi.json');
+//main const congress_addr = '0xf8783d59c0dac6bf2c70f727263f612d738da09f';
+const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+//const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359';
+const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //test tokenERC20
+const dai_token_abi = require('../../build/contracts/TokenERC20_min_abi.json');
 let account;
 let congress;
 let dai;
-var members = [];
+let members = [];
+const startBlock = 88e4;
 
 window.App = {
   start: function(_account) {
     account = _account;
+    let minimum_quorum, majority_margin;
     //create array of members
-    congress.LogMembershipChanged({},  function(err, change) {
+    /*congress.LogMembershipChanged({},  function(err, change) {
       if (err) return err;
       if (change.args.member === account) {
 	if (!change.args.isMember) {
@@ -34,179 +36,225 @@ window.App = {
 	  console.log("new member: " + change.args.member);
 	}
 	else if (!change.args.isMember)  {
-          var i = members.indexOf(change.args.member);
+          let i = members.indexOf(change.args.member);
           if(i != -1) {
 	    members.splice(i, 1);
 	  }
         }
       }
+    })*/
+    congress.minimumQuorum.call(function(err, min_quorum) {
+      if (err) return;
+      minimum_quorum = min_quorum;
     })
-    congress.members.call(account,  function(err,res) {
-      if (res[0]) {
-        document.getElementById("forMembers").className = 'shown';
-        congress.owner.call(function(err,res) {
-          if (res === account) document.getElementById("forOwner").className = 'shown';
-	})
-      }
+    congress.majorityMargin.call(function(err, margin) {
+      if (err) return;
+      majority_margin = margin;
+    })
+    congress.members.call(account, function(err,res) {
+      if (res[0]) document.getElementById("forMembers").className = 'shown';
       else document.getElementById("forMembers").className = 'hidden';
     })
-    congress.LogProposalAdded({}, {fromBlock:0},  function(err, res) {
+    //PROPOSALS ADDED
+    congress.LogProposalAdded({}, {fromBlock:startBlock},  function(err, res) {
       if (err) return err;
-      congress.proposals.call(res.args.proposalID, {from:account}, function(err, proposal) {
+      let proposalID = Number(res.args.proposalID);
+      //if (typeof document.getElementById(proposalID) !== "undefined") return;
+      congress.proposals.call(proposalID, function(err, proposal) {
 	if (err) return err;
-        var _proposal = document.createElement("tr");
-        _proposal.innerHTML = '<td align="right"></td><td align="right"></td><td align="right"></td><td align="right"></td><td align="right"></td><td align="right"></td><td align="right"></td>';
-        _proposal.id = res.args.proposalID;
-        var proposal_elements = _proposal.getElementsByTagName('td');
         if (proposal[4]) return;
+        let _proposal = document.createElement("tr");
+        _proposal.innerHTML = '<td align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td align="center"></td>';
+        _proposal.id = proposalID;
+        let proposal_elements = _proposal.getElementsByTagName('td');
+	//WRITE TABLE ROW (PROPOSAL)
         proposal_elements[0].innerHTML = _proposal.id;
         proposal_elements[1].innerHTML = proposal[0]; //recipient
         proposal_elements[2].innerHTML = proposal[1]/1e18; //amount
         proposal_elements[3].innerHTML = proposal[2]; //description
         proposal_elements[4].innerHTML = Number(proposal[6]); //number votes
-	proposal_elements[5].innerHTML = Number(proposal[7]); //progressive vote
-	var voted = congress.LogVoted({proposalID:_proposal.id ,voter:account}, {fromBlock:res.blockNumber});
-	voted.get( function(err, res) {
+	(proposal[6] >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
+       	proposal_elements[5].innerHTML = Number(proposal[7]); //progressive vote
+	(proposal[7] >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
+	//GET LOGVOTED FOR THIS PROPOSAL FROM  THIS ACCOUNT
+	let voted = congress.LogVoted({proposalID:_proposal.id, voter:account}, {fromBlock:res.blockNumber});
+	//congress.proposals[_proposal.id].voted.call(account, function(err,res) {console.log(res)});
+	voted.get(function(err, vote) {
 	  if (err) return err;
-	  if (res.length === 0) {
-            proposal_elements[6].innerHTML = "<button onclick= 'App.vote(" + _proposal.id + ")' href='#'>VOTE</button><input type='radio' name='vote' value='true'><label for='true'>YES</label><input type='radio' name='vote' value='false'><label for='false'>NO</label>"
-	    proposal_elements[7].innerHTML = "<input id='justification' class='shown' placeholder='justification text'>";
+	  if (vote.length === 0) { //you haven't voted
+            if (proposal[1] > 0) { //ether transaction
+	      proposal_elements[6].innerHTML = "<button onclick= 'App.vote(" + _proposal.id + "," + true + ")' href='#'>YES</button><button onclick= 'App.vote(" + _proposal.id + "," + false + ")' href='#'>NO</button>";    //<input type='radio' name='vote' value='true'><label for='true'>YES</label><input type='radio' name='vote' value='false'><label for='false'>NO</label>"
+            } else  { //contract proposal interaction
+	      proposal_elements[6].innerHTML = "<button id='" + _proposal.id + "cp'>VOTE</button>";
+	      document.getElementById(_proposal.id + "cp").onclick = function() {
+	        congress.checkProposalCode(_proposal.id, proposal[0], 0, App.get_bytecode(proposal[0], proposal[2]), function(err, code_checks) {
+                  if (code_checks) {
+		    proposal_elements[6].innerHTML = "<button onclick='App.vote(" + _proposal.id + "," + true + ")'>YES</button><button onclick='App.vote(" + _proposal.id + "," + false + ")'>NO</button>";
+		  } else alert("proposal check returned false");
+	        })
+	      }
+	    }
 	  }
-       	  else  {
-	    proposal_elements[6].innerHTML = "you have voted"; //<button onclick='checkProposal()' href='#'>check proposal</button>";
-	    document.getElementByID("justification").className = "hidden";
+       	  else  { //have voted, if conditions met write EXECUTE button
+ 	    if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
+  	      proposal_elements[6].innerHTML = "<button id='" + _proposal.id + "ep'>EXECUTE</button>";
+              document.getElementById(_proposal.id + "ep").onclick = function() {
+                congress.executeProposal(_proposal.id, App.get_bytecode(proposal[0], proposal[2]), {gas:1e6}, function(err, res ){
+	          if (err) return err;
+	          console.log("execution initiated");
+  	          document.getElementById(_proposal.id + "ep").disabled = true;
+ 	        })
+              }
+	    } else proposal_elements[6].innerHTML = "voted";
 	  }
 	})
-	document.getElementById("activeProposals").append(_proposal);
-        congress.LogVoted({proposalID:_proposal.id},  function(err, vote) {
-          if (err) return err;
-	  congress.proposals.call(_proposal.id, function(err, proposal) {
-            if (err) return err;
-	    proposal_elements[4].innerHTML = Number(proposal[6]);
-	    proposal_elements[5].innerHTML = Number(proposal[7]);
-	  })
-          if (vote.args.voter === account) proposal_elements[6].innerHTML = "you have voted";
-	  document.getElementByID("justification").className = "hidden";
-        })
+        //APPEND PROPOSAL
+        document.getElementById("activeProposals").append(_proposal);
       })
     })
-    congress.LogProposalTallied({fromBlock:0},  function(err, proposal) {
+    //update_status: function(proposalID, 
+    congress.LogReceivedEther({}, function(err, res) {
+      console.log(res.args);
+    })
+    congress.LogReceivedTokens({}, function(err, res) {
+      console.log(res.args);
+    })
+    //WATCH FOR VOTES FOR THIS PROPOSAL FROM NOW ON FROM ANYWHERE
+    congress.LogVoted({}, function(err, vote) {
       if (err) return err;
+      let propID = Number(vote.args.proposalID);
+      let proposal_elements = document.getElementById(propID).getElementsByTagName("td");
+      congress.proposals.call(propID, function(err, proposal) {
+        if (err) return err;
+	proposal_elements[4].innerHTML = proposal[6];
+	if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
+	proposal_elements[5].innerHTML = proposal[7];
+	if (proposal[7] >= majority_margin) proposal_elements[5].style.color = "green";
+  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
+  	  proposal_elements[6].innerHTML = "<button id='" + propID + "ep'>EXECUTE</button>";
+          document.getElementById(propID + "ep").onclick = function() {
+            congress.executeProposal(propID, App.get_bytecode(proposal[0], proposal[2]), {gas:1e6}, function(err, res) {
+	      if (err) return err;
+	      console.log("execution initated");
+  	      document.getElementById(propID + "ep").disabled = true;
+	    })
+	  }
+	} else if (vote.args.voter === account) proposal_elements[6].innerHTML = "voted"; 
+      })
+    })
+    congress.LogProposalTallied({}, function(err, proposal) {console.log(proposal.args.active);
+      if (err) return err;
+      let status;
+      proposal.args.active ? status="proposal passed" : status="proposal failed";
+      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[ 6].innerHTML = status; console.log(status);
       console.log("proposal votes tallied. Result: " + proposal.args);
     })
-    var changeOfRules = congress.LogChangeOfRules();
-    changeOfRules.watch(function(err, newrules) {
+    congress.LogChangeOfRules(function(err, newrules) {
       if (err) return err;
-      changeOfRules.stopWatching();
-      console.log(newrules.args); //write latest rules
+      majority_margin = newrules.args.newMajorityMargin;
+      minimum_quorum = newrules.args.newMinumumQuorum;
     })
   },
   donate: function() {
-    var donation = document.getElementById("donate").value*1e18;
+    let donation = document.getElementById("donate").value*1e18;
     if (document.getElementById("crypto_currency").value == "ETH") {
-      web3.eth.sendTransaction({from:account, to:congress_addr, value:donation},  function(err, res) {
+      web3.eth.sendTransaction({from:account, to:congress_addr, value:donation, gas:4e4},  function(err, res) {
         if (err) return err;
-        console.log("ether donation successfull!");
+        console.log("ether donation initiated");
       })
     }
     if (document.getElementById("crypto_currency").value == "DAI") {;
-      dai.approveAndCall(congress_addr, donation, '0x', {from:account},  function(err, res) {
+      dai.approveAndCall(congress_addr, donation, '0x', {from:account, gas:1e5},  function(err, res) {
         if (err) return err;
-        console.log(donation/1e18 + "dai donation successfull!");
+        console.log(donation/1e18 + "dai donation initiated");
       })
     }
   },
-  add_member: function() {
-    var newMember = document.getElementById("newMemberAddress").value;
-    var name = document.getElementById("newMemberName").value;
-    congress.addMember(newMember, name, {from:account}, function(err, res) {
-      if (err) return err;
-      console.log("member added");
-    })
-  },
-  remove_member: function() {
-    var exmember = document.getElementById("removeMember").value;
-    congress.removeMember(exmember, {from:account}, function(err, res) {
-      if (err) return err;
-      console.log('member removed');
-    })
-  },
-  change_voting_rules: function() {
-    var minQuorum = document.getElementById("minQuorum").value;
-    var minutesForDebate = document.getElementById("minutesForDebate").value;
-    var majorityMargin = document.getElementById("majorityMargin").value;
-    congress.changeVotingRules(minQuorum, minutesForDebate, majorityMargin, {from:account}, function(err, newrules) {
-      if (err) return err;
-      console.log("success!");
-    })
-  },
-  change_ownership: function() {
-    var new_owner = document.getElementById("newOwner").value;
+  /*change_ownership: function() {
+    let new_owner = document.getElementById("newOwner").value;
     congress.transferOwnership(new_owner, {from:account}, function(err, res) {
       if (err) return err;
       console.log("ownership changed to " + new_owner);
     })
-  },
+  },*/
   new_proposal: function() {
-    var beneficiary = document.getElementById("beneficiary").value;
-    var jobDescription = document.getElementById("jobDescription").value;
-    var weiAmount = 0;
-    var transactionBytecode = '';
-    if (document.getElementById("crypto_curr").value == "ETH") {
-      weiAmount = document.getElementById("Amount").value*1e18;
-    } else if (document.getElementById("crypto_curr").value == "DAI") {
-      var daiAmount = document.getElementById("Amount").value*1e18;
-      transactionBytecode = dai.transfer.getData(beneficiary, daiAmount);
-      beneficiary = dai_token_addr;
+    let proposal = document.getElementById("proposal_options").value;
+    let transactionBytecode;
+    let beneficiary;
+    let weiAmount;
+    let jobDescription;
+    switch (proposal) {
+      case "ETH":
+        beneficiary = prompt("beneficiary?");
+        weiAmount = prompt("amount ether?")*1e18;
+        jobDescription = prompt("job description?");
+	break;
+      case  "DAI":
+	weiAmount=0;
+        beneficiary = dai_token_addr; //dai token
+        jobDescription = "send dai";
+	break;
+      case "ADD_MEMBER":
+	beneficiary=congress_addr; //this contract
+	weiAmount=0;
+	jobDescription="add member";
+	break;
+      case "REMOVE_MEMBER":
+	beneficiary=congress_addr; //this contract
+	weiAmount=0;
+	jobDescription="remove member";
+	break;
+      case "NEW_RULES":
+        beneficiary=congress_addr; //this contract
+        weiAmount=0;
+        jobDescription="change voting rules";
     }
-    congress.newProposal(beneficiary, weiAmount, jobDescription, transactionBytecode, {from:account, gas:1e6}, function(err, res) {
+    congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription), {gas:2e5}, function(err, res) {
       if (err) return err;
-      console.log("new proposal " + res);
+      console.log("new proposal initiated" + res);
     })
   },
-  supportsProposal: function() {
-    if (document.querySelector('input[name="vote"]:checked').value === "false") return false;
-    else return true;
-  },
-  vote: function(proposalNumber) {
-    var _justificationText = document.getElementById("justification").value;
-    congress.vote(proposalNumber, this.supportsProposal(), _justificationText, {from:account}, function(err, res) {
+  vote: function(proposalNumber,vote) {
+    let _justificationText = "";
+    congress.vote(proposalNumber, vote, _justificationText, {from:account, gas:1e5}, function(err, res) {
       if (err) return err;
     })
   },
-  check_proposal: function() {
-    var proposalNumber = document.getElementById("proposalNumber1").value;
-    var beneficiary = document.getElementById("beneficiary1").value;
-    var daiAmount = document.getElementById("amount1").value*1e18;
-    var bytecode = dai.transfer.getData(beneficiary, daiAmount);
-    beneficiary = dai_token_addr;
-    congress.checkProposalCode(proposalNumber, beneficiary, 0, bytecode, function(err, res) {
-      if (err) return err;
-      if (res) {
-        document.getElementById("bytecode1").value = bytecode;
-        document.getElementById("proposalNumber2").value = proposalNumber;
-      }
-      console.log(res);
-    })
-  },
-  execute_proposal: function() {
-    var  _proposalNumber = document.getElementById("proposalNumber2").value;
-    var _transactionBytecode = document.getElementById("bytecode1").value;
-    congress.executeProposal(_proposalNumber, _transactionBytecode, {from:account, gas:1e6}, function(err, res) {
-      if (err) return err;
-      console.log("proposal executed!");
-    })
+  get_bytecode: function(contract_addr, job_description) {
+    switch(contract_addr) {
+      case dai_token_addr:
+        return dai.transfer.getData(prompt("dai recipient"), prompt("amount $dai")*1e18);
+        break;
+      case congress_addr:
+        switch(job_description) {
+          case "change voting rules":
+            return congress.changeVotingRules.getData(prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?"));
+	    break;
+          case "add member":
+            return congress.addMember.getData(prompt("new member address?"), prompt("name of new member?"));
+	    break;
+          case "remove member":
+            return congress.removeMember.getData(prompt("address of member to be removed?"));
+	    break;
+        }
+      default:
+        return "";
+    }
   },
 },
 
 window.addEventListener('load', async  function() {
+
   // Checking if Web3 has been injected by the browser (Mist/MetaMask)
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
     try {
       // Request account access if needed
       await ethereum.enable();
-      console.log("using ethereum.enable" + web3.eth.accounts + ".  Acccounts now exposed");
+      console.log("using ethereum.enable. Acccounts now exposed");
+      congress = web3.eth.contract(congress_abi).at(congress_addr);
+      dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
+      App.start(web3.eth.accounts[0]);
     } catch (error) {
       console.log("access denied" + error);
     }
@@ -217,22 +265,8 @@ window.addEventListener('load', async  function() {
     console.log("legacy" + web3.eth.accounts + ".  Acccounts always exposed");
   }
   else  {
-   window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-   console.log("localhost:8545");
-  }
-    // Non-dapp browsers...
-  /*else {
     console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
   }
-  if (typeof web3 !== 'undefined') {
-    console.warn("Using web3 detected from external source. If you find that your accounts don't appear or you have 0 MetaCoin, ensure you've configured that source properly. If using MetaMask, see the following link. Feel free to delete this warning. :) http://truffleframework.com/tutorials/truffle-and-metamask")
-    // Use Mist/MetaMask's provider
-    window.web3 = new Web3(web3.currentProvider);
-  } else {
-    console.warn("No web3 detected. Falling back to http://localhost:8545.");
-    // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-    window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-  }*/
   window.web3.version.getNetwork((err, netId) => {
     switch (netId) {
       case "1":
@@ -248,16 +282,7 @@ window.addEventListener('load', async  function() {
         console.log('This is an unknown network.')
     }
   })
-  /*document.getElementById("crypto_curr").onchange = function() {console.log(this.value);
-    if (this.value == "ETH") {
-      document.getElementById("daiAmount").className = "hidden";
-      document.getElementById("ethAmount").className = "shown";
-    } else if (this.value == "DAI") {
-      document.getElementById("daiAmount").className = "shown";
-      document.getElementById("ethAmount").className = "hidden";
-    }
-  }*/
-  congress = web3.eth.contract(congress_abi).at(congress_addr);
-  dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
-  App.start(web3.eth.accounts[0]);
+  ethereum.on('accountsChanged', function (accounts) {
+    App.start(web3.eth.accounts[0]);
+  })
 });

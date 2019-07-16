@@ -54,7 +54,7 @@ contract Congress is owned, tokenRecipient {
         uint numberOfVotes;
         int currentResult;
         bytes32 proposalHash;
-        //Vote[] votes;
+        Vote[] votes;
         mapping (address => bool) voted;
     }
     struct Member {
@@ -89,7 +89,7 @@ contract Congress is owned, tokenRecipient {
 
     function removeMember(address targetMember) onlyOwner public {
         require(members[targetMember].isMember == true);
-	members[targetMember].isMember == false;
+	members[targetMember].isMember = false;
 	emit LogMembershipChanged(targetMember, false);
     }
     /**
@@ -201,7 +201,7 @@ contract Congress is owned, tokenRecipient {
             && !p.executed
             && p.proposalHash == keccak256(abi.encodePacked(p.recipient, p.amount, transactionBytecode))
             && p.numberOfVotes >= minimumQuorum);
-        if (p.currentResult > majorityMargin) {
+        if (p.currentResult >= majorityMargin) {
             /** Proposal passed; execute the transaction **/
             p.executed = true; // Avoid recursive calling
             (bool success, ) = p.recipient.call.value(p.amount)(transactionBytecode);
