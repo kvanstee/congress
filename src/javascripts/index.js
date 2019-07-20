@@ -81,16 +81,16 @@ window.App = {
     congress.LogReceivedTokens({}, function(err, res) {
       console.log(res.args);
     })
-    //WATCH FOR VOTES FOR THIS PROPOSAL FROM NOW ON FROM ANYWHERE
+    //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
     congress.LogVoted({}, function(err, vote) {
       if (err) return err;
 	    let proposalID = Number(vote.args.proposalID);
       let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
       congress.proposals.call(proposalID, function(err, proposal) {
         if (err) return err;
-				proposal_elements[4].innerHTML = proposal[6];
+				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
-				proposal_elements[5].innerHTML = proposal[7];
+				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
 				if (proposal[7] >= majority_margin) proposal_elements[5].style.color = "green";
 		  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
 		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
