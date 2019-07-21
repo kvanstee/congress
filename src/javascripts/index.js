@@ -127,7 +127,7 @@ window.App = {
       })
     }
     if (document.getElementById("crypto_currency").value == "DAI") {;
-      dai.approveAndCall(congress_addr, donation, '0x', {from:account, gas:1e5},  function(err, res) {
+      dai.transfer(congress_addr, donation, {from:account, gas:1e5},  function(err, res) {
         if (err) return err;
         console.log(donation/1e18 + "dai donation initiated");
       })
