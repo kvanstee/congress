@@ -1,16 +1,22 @@
 require('../stylesheets/app.css');
-
+//import { default as Web3} from 'web3';
 const congress_abi = require('../../build/contracts/Congress_abi.json');
-const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
-const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
-//const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
-const dai_token_abi = require('../../build/contracts/TokenERC20_min_abi.json');
+//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+//const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
+const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+//const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+//const matching_market_addr = '0x39755357759cE0d7f32dC8dC45414CCa409AE24e'; //MAINNET
+const matching_market_abi= require('../../build/contracts/Matching_market_abi_min.json');
+const ERC20_token_abi = require('../../build/contracts/ERC20.json').abi;
 let account;
 let congress;
 let dai;
+let weth;
+let matching_market;
 let members = [];
-const startBlock = 8184105;
+//const startBlock = 8256426;
+const startBlock = 750000;
 let minimum_quorum, majority_margin;
 
 window.App = {
@@ -43,6 +49,13 @@ window.App = {
         }
       }
     })*/
+	  /*let _balances = document.createElement("tr");
+	  _balances.innerHTML = '<td></td><td></td><td></td>';
+	  let balances_elements = _balances.getElementsByTagName('td');
+		web3.eth.getBalance(congress_addr, (err, eth_bal) =>  {balances_elements[0] = "ETH" + eth_bal});
+		console.log(dai.balanceOf(congress_addr, (err,dai_bal) => {balances_elements[1] = "DAI" + dai_bal});
+		console.log(weth.balanceOf(congress_addr, (err,weth_bal) => {balances_elements[2] = "WETH" + weth+bal});
+		document.getElementById("balances").append(_balances);*/
 		let writtenProposals =  document.getElementById("activeProposals");
 		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);
 		congress.minimumQuorum.call(function(err, min_quorum) {
@@ -148,22 +161,42 @@ window.App = {
       case  "DAI":
 				weiAmount=0;
         beneficiary = dai_token_addr; //dai token
-        jobDescription = "send dai";
+        jobDescription = "send_dai";
 				break;
       case "ADD_MEMBER":
 				beneficiary=congress_addr; //this contract
 				weiAmount=0;
-				jobDescription="add member";
+				jobDescription="add_member";
 				break;
       case "REMOVE_MEMBER":
 				beneficiary=congress_addr; //this contract
 				weiAmount=0;
-				jobDescription="remove member";
+				jobDescription="remove_member";
 				break;
       case "NEW_RULES":
         beneficiary=congress_addr; //this contract
         weiAmount=0;
-        jobDescription="change voting rules";
+        jobDescription="change_voting_rules";
+				break;
+			/*case "ETH_TO_WETH":
+				beneficiary=weth_token_addr;
+				weiAmount=0;
+				jobDescription="eth_to_weth";
+				break;
+			case "WETH_TO_ETH":
+				beneficiary=weth_token_addr;
+        weiAmount=0;
+        jobDescription="weth_to_eth";
+				break;
+			case "WETH_TO_DAI":
+				beneficiary=matching_market_addr;
+				weiAmount=0;
+        jobDescription="weth_to_dai";
+				break;
+			case "DAI_TO_WETH":
+				beneficiary=matching_market_addr;
+				weiAmount=0;
+        jobDescription="dai_to_weth";*/
     }
     congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription), {gas:2e5}, function(err, res) {
       if (err) return err;
@@ -230,20 +263,41 @@ window.App = {
   },
   get_bytecode: function(contract_addr, job_description) {
     switch(contract_addr) {
+			case weth_token_addr:
+			/*weth = web3.eth.contract(ERC20_token_abi).at(weth_token_addr);
+				switch(job_description) {
+					case  "weth_to_eth":
+						return weth.withdraw.getData(congress_addr, prompt("amount of eth to withraw?")*1e18);
+						break;
+					case "eth_to_weth":
+						return weth.deposit.getData(congress_addr, prompt("amount eth to deposit?")*1e18);
+						break;
+				}
+			case matching_market_addr:
+			matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
+        switch(job_description) {
+					case "dai_to_weth":
+						return matching_market.sellAllAmount.getData(dai_token_addr, prompt("amount $dai to convert to weth?")*1e18, weth_token_addr, 5e16);
+						break;
+					case "weth_to_dai":
+						return matching_market.sellAllAmount.getData(weth_token_addr, prompt("amount weth to convert to dai?")*1e18, dai_token_addr, 5e16);
+						break;
+				}*/
       case dai_token_addr:
+      dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
         return dai.transfer.getData(prompt("dai recipient"), prompt("amount $dai")*1e18);
         break;
       case congress_addr:
         switch(job_description) {
-          case "change voting rules":
+          case "change_voting_rules":
             return congress.changeVotingRules.getData(prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?"));
-	    break;
-          case "add member":
+	    			break;
+          case "add_member":
             return congress.addMember.getData(prompt("new member address?"), prompt("name of new member?"));
-	    break;
-          case "remove member":
+	    			break;
+          case "remove_member":
             return congress.removeMember.getData(prompt("address of member to be removed?"));
-	    break;
+	    			break;
         }
       default:
         return "";
@@ -261,7 +315,6 @@ window.addEventListener('load', async  function() {
       await ethereum.enable();
       console.log("using ethereum.enable. Acccounts now exposed");
       congress = web3.eth.contract(congress_abi).at(congress_addr);
-      dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
       App.start(web3.eth.accounts[0]);
     } catch (error) {
       console.log("access denied" + error);
@@ -274,6 +327,9 @@ window.addEventListener('load', async  function() {
   }
   else  {
     console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+	  //window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+		//congress = web3.eth.contract(congress_abi).at(congress_addr);
+    //App.start(web3.eth.accounts[0]);
   }
   window.web3.version.getNetwork((err, netId) => {
     switch (netId) {

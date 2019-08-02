@@ -3,15 +3,29 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
   <title>CLT</title>
+	<!script src="https://console.chat/load.js"></script!>
   <script type="text/javascript" src="./bundle.js"></script>
 </head>
   <body>
+	<table>
+    <tbody id="balances"></tbody>
+	</table>
   <h1> COMMUNITY LAND TRUST </h1>
     <div id="content">
       <button onclick="App.donate()" href="#">DONATE</button><input  id="donate" placeholder="amount"><select id="crypto_currency"><option value="ETH">ETH</option><option value="DAI">DAI</option></select><br>
       <div id="forMembers" class="hidden">
         <button onclick="App.new_proposal()" href="#">NEW PROPOSAL</button>
-          <select id="proposal_options"><option value="ETH" selected>SEND ETH</option><option value="DAI">SEND DAI</option><option value="ADD_MEMBER">ADD MEMBER</option><option value="REMOVE_MEMBER">REMOVE MEMBER</option><option value="NEW_RULES">CHANGE VOTING RULES</option></select><br>
+          <select id="proposal_options">
+						<option value="ETH" selected>SEND ETH</option>
+						<option value="DAI">SEND DAI</option>
+						<option value="ADD_MEMBER">ADD MEMBER</option>
+						<option value="REMOVE_MEMBER">REMOVE MEMBER</option>
+						<option value="NEW_RULES">CHANGE VOTING RULES</option>
+						<option value="WETH_TO_ETH">WITHDRAW ETH FROM WETH CONTRACT</option>
+						<option value="ETH_TO_WETH">BUY WETH TOKENS WITH ETH</option>
+						<option value="WETH_TO_DAI">SELL WETH FOR DAI</option>
+						<option value="DAI_TO_WETH">SELL DAI FOR WETH</option>
+					</select><br>
 	<table>
 	  <tr><th>PROPOSAL NUMBER</th><th>RECIPIENT</th><th>AMOUNT ETH</th><th>JOB DESCRIPTION</th><th>TOTAL VOTES</th><th>PROGRESSIVE VOTE</th><th>STATUS</th></tr>
           <tbody id="activeProposals"></tbody>
