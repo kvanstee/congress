@@ -1,16 +1,17 @@
 require('../stylesheets/app.css');
 
 const congress_abi = require('../../build/contracts/Congress_abi.json');
-const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
-const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
-//const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+//const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
+const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
 const dai_token_abi = require('../../build/contracts/TokenERC20_min_abi.json');
 let account;
 let congress;
 let dai;
 let members = [];
-const startBlock = 8184105;
+//const startBlock = 8184105; //MAINNET
+const startBlock = 750000;  //goerli test net
 let minimum_quorum, majority_margin;
 
 window.App = {
@@ -68,10 +69,13 @@ window.App = {
       }
     })
 		//PROPOSALS FROM NOW ON
-		let newProposal = congress.LogProposalAdded();
+		let Ids = new Set();
+		let newProposal = congress.LogProposalAdded({}, {fromBlock:'latest'});
 		newProposal.watch(function(err, proposal) {
 			if (err) return;
-			let proposalID = proposal.args.proposalID;
+			let proposalID = Number(proposal.args.proposalID);
+			if (Ids.has(proposalID)) return;
+			else Ids.add(proposalID);
 			App.writeProposal(proposalID);
 		})
 		//DONATION RECEIPTS
@@ -141,7 +145,7 @@ window.App = {
     let jobDescription;
     switch (proposal) {
       case "ETH":
-        beneficiary = prompt("beneficiary?");
+        beneficiary = prompt("address beneficiary?");
         weiAmount = prompt("amount ether?")*1e18;
         jobDescription = prompt("job description?");
 				break;
@@ -186,6 +190,7 @@ window.App = {
 	    proposal_elements[3].innerHTML = proposal[2]; //description
 	    proposal_elements[4].innerHTML = Number(proposal[6]); //number votes
 	    proposal_elements[5].innerHTML = Number(proposal[7]); //progressive vote
+			//APPEND PROPOSAL
 		  document.getElementById("activeProposals").append(_proposal);
 		  (Number(proposal[6]) >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 		  (Number(proposal[7]) >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
@@ -252,7 +257,6 @@ window.App = {
 },
 
 window.addEventListener('load', async  function() {
-
   // Checking if Web3 has been injected by the browser (Mist/MetaMask)
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
@@ -260,9 +264,6 @@ window.addEventListener('load', async  function() {
       // Request account access if needed
       await ethereum.enable();
       console.log("using ethereum.enable. Acccounts now exposed");
-      congress = web3.eth.contract(congress_abi).at(congress_addr);
-      dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
-      App.start(web3.eth.accounts[0]);
     } catch (error) {
       console.log("access denied" + error);
     }
@@ -290,6 +291,9 @@ window.addEventListener('load', async  function() {
         console.log('This is an unknown network.')
     }
   })
+  congress = web3.eth.contract(congress_abi).at(congress_addr);
+  dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
+  App.start(web3.eth.accounts[0]);
   ethereum.on('accountsChanged', function (accounts) {
     App.start(web3.eth.accounts[0]);
   })
