@@ -48,36 +48,32 @@ window.App = {
 		let writtenProposals =  document.getElementById("activeProposals");
 		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);
 		//ESTABLISH STATE CONSTANTS
-		congress.minimumQuorum.call(function(err, min_quorum) {
-      if (err) return;
-      minimum_quorum = min_quorum;
-    })
-    congress.majorityMargin.call(function(err, margin) {
-      if (err) return;
-      majority_margin = margin;
-    })
+		congress.minimumQuorum.call((err, min_quorum) =>  minimum_quorum = min_quorum);
+    congress.majorityMargin.call((err, margin) => majority_margin = margin);
 		//SHOW PROPOSALS IF MEMBER
-    congress.members.call(account, function(err,res) {console.log("members");
+    congress.members.call(account, function(err,res) {
       if (res[0]) document.getElementById("forMembers").className = 'shown';
       else document.getElementById("forMembers").className = 'hidden';
     })
     //PROPOSALS ADDED PREVIIOUSLY
-    let previousProposals = congress.LogProposalAdded({}, {fromBlock:startBlock});
+		let Ids = new Set();
+    let previousProposals = congress.LogProposalAdded({}, {fromBlock:startBlock, toBlock:'latest'});
     previousProposals.get(function(err, proposals) {
       if (err) return;
       for (let p=0; p<proposals.length; p++) {
         let proposalID = Number(proposals[p].args.proposalID);
+				if (Ids.has(proposalID)) return;
+				Ids.add(proposalID);
         App.writeProposal(proposalID);
       }
     })
 		//PROPOSALS FROM NOW ON
-		let Ids = new Set();
 		let newProposal = congress.LogProposalAdded({}, {fromBlock:'latest'});
 		newProposal.watch(function(err, proposal) {
 			if (err) return;
 			let proposalID = Number(proposal.args.proposalID);
 			if (Ids.has(proposalID)) return;
-			else Ids.add(proposalID);
+			Ids.add(proposalID);
 			App.writeProposal(proposalID);
 		})
 		//DONATION RECEIPTS
@@ -119,13 +115,12 @@ window.App = {
 				} else if (vote.args.voter === account) proposal_elements[6].innerHTML = "voted";
       })
     })
-    congress.LogProposalTallied({}, function(err, proposal) {console.log(proposal.args.active);
+    congress.LogProposalTallied({}, function(err, proposal) {
       if (err) return err;
       let status;
-
       proposal.args.active ? status="proposal passed" : status="proposal failed";
-      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[ 6].innerHTML = status; console.log(status);
-      console.log("proposal votes tallied. Result: " + proposal.args);
+      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[ 6].innerHTML = status;
+      console.log("proposal votes tallied. Result: " + status);
     })
     congress.LogChangeOfRules(function(err, newrules) {
       if (err) return err;
@@ -245,7 +240,7 @@ window.App = {
   get_bytecode: function(contract_addr, job_description) {
     switch(contract_addr) {
       case dai_token_addr:
-				//dai.balanceOf.call(contract_addr, (err, bal) => {console.log(bal)});
+				//dai.balanceOf.call(contract_addr, (err, bal) => {
         return dai.transfer.getData(prompt("dai recipient"), prompt("amount $dai")*1e18);
 				//})
         break;
@@ -300,6 +295,7 @@ window.addEventListener('load', async  function() {
     }
   })
   ethereum.on('accountsChanged', function (accounts) {
-  	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
+  	//for (let Id of Ids) App.writeProposal(Id);
+	  web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
   })
 });
