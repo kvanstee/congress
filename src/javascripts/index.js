@@ -5,13 +5,13 @@ const congress_abi = require('../../build/contracts/Congress_abi.json');
 const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
 //const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
 const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
-const dai_token_abi = require('../../build/contracts/TokenERC20_min_abi.json');
+const dai_token_abi = require('../../build/contracts/ERC20_abi.json');
 let account;
 let congress;
 let dai;
 let members = [];
 //const startBlock = 8184105; //MAINNET
-const startBlock = 750000;  //goerli test net
+const startBlock = 1080750 ;  //goerli test net
 let minimum_quorum, majority_margin;
 
 window.App = {
@@ -44,8 +44,10 @@ window.App = {
         }
       }
     })*/
+		//REMOVE PREVIOUS TABLE
 		let writtenProposals =  document.getElementById("activeProposals");
 		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);
+		//ESTABLISH STATE CONSTANTS
 		congress.minimumQuorum.call(function(err, min_quorum) {
       if (err) return;
       minimum_quorum = min_quorum;
@@ -55,7 +57,7 @@ window.App = {
       majority_margin = margin;
     })
 		//SHOW PROPOSALS IF MEMBER
-    congress.members.call(account, function(err,res) {
+    congress.members.call(account, function(err,res) {console.log("members");
       if (res[0]) document.getElementById("forMembers").className = 'shown';
       else document.getElementById("forMembers").className = 'hidden';
     })
@@ -85,7 +87,16 @@ window.App = {
     congress.LogReceivedTokens({}, function(err, res) {
       console.log(res.args);
     })
-    //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
+		//BUTTONS
+  	document.getElementById("new_proposal_button").onclick = function() {
+	    let proposal = document.getElementById("proposal_options").value;
+			App.new_proposal(proposal);
+		}
+		document.getElementById("donate_button").onclick = function() {
+	    let donation = document.getElementById("donate").value*1e18;
+			App.donate(donation);
+		}
+	  //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
     congress.LogVoted({}, function(err, vote) {
       if (err) return err;
 	    let proposalID = Number(vote.args.proposalID);
@@ -122,8 +133,7 @@ window.App = {
       minimum_quorum = newrules.args.newMinumumQuorum;
     })
   },
-  donate: function() {
-    let donation = document.getElementById("donate").value*1e18;
+  donate: function(donation) {
     if (document.getElementById("crypto_currency").value == "ETH") {
       web3.eth.sendTransaction({from:account, to:congress_addr, value:donation, gas:4e4},  function(err, res) {
         if (err) return err;
@@ -137,8 +147,7 @@ window.App = {
       })
     }
   },
-  new_proposal: function() {
-    let proposal = document.getElementById("proposal_options").value;
+  new_proposal: function(proposal) {
     let transactionBytecode;
     let beneficiary;
     let weiAmount;
@@ -236,19 +245,21 @@ window.App = {
   get_bytecode: function(contract_addr, job_description) {
     switch(contract_addr) {
       case dai_token_addr:
+				//dai.balanceOf.call(contract_addr, (err, bal) => {console.log(bal)});
         return dai.transfer.getData(prompt("dai recipient"), prompt("amount $dai")*1e18);
+				//})
         break;
       case congress_addr:
         switch(job_description) {
           case "change voting rules":
             return congress.changeVotingRules.getData(prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?"));
-	    break;
+				    break;
           case "add member":
             return congress.addMember.getData(prompt("new member address?"), prompt("name of new member?"));
-	    break;
+	    			break;
           case "remove member":
             return congress.removeMember.getData(prompt("address of member to be removed?"));
-	    break;
+	    			break;
         }
       default:
         return "";
@@ -264,37 +275,31 @@ window.addEventListener('load', async  function() {
       // Request account access if needed
       await ethereum.enable();
       console.log("using ethereum.enable. Acccounts now exposed");
+		  congress = web3.eth.contract(congress_abi).at(congress_addr);
+  		dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
+	  	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
     } catch (error) {
       console.log("access denied" + error);
     }
   }
-  // Legacy dapp browsers...
+  /* Legacy dapp browsers...
   else if (window.web3) {
     window.web3 = new Web3(web3.currentProvider);
     console.log("legacy" + web3.eth.accounts + ".  Acccounts always exposed");
   }
   else  {
     console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
-  }
+  }*/
   window.web3.version.getNetwork((err, netId) => {
     switch (netId) {
       case "1":
         console.log('This is mainnet')
         break
-      case "3":
-        console.log('This is the ropsten test network.')
-        break
-      case "4":
-        console.log('This is the rinkeby test network.')
-        break
       default:
         console.log('This is an unknown network.')
     }
   })
-  congress = web3.eth.contract(congress_abi).at(congress_addr);
-  dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
-  App.start(web3.eth.accounts[0]);
   ethereum.on('accountsChanged', function (accounts) {
-    App.start(web3.eth.accounts[0]);
+  	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
   })
 });
