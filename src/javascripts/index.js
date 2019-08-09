@@ -1,17 +1,17 @@
 require('../stylesheets/app.css');
 
 const congress_abi = require('../../build/contracts/Congress_abi.json');
-//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
-//const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
-const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+//const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
+//const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
 const dai_token_abi = require('../../build/contracts/ERC20_abi.json');
 let account;
 let congress;
 let dai;
 let members = [];
-//const startBlock = 8184105; //MAINNET
-const startBlock = 1080750 ;  //goerli test net
+const startBlock = 8184105; //MAINNET
+//const startBlock = 1080750 ;  //goerli test net
 let minimum_quorum, majority_margin;
 
 window.App = {
