@@ -1,17 +1,18 @@
 require('../stylesheets/app.css');
 
-const congress_abi = require('../../build/contracts/Congress_abi.json');
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 //const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
 const dai_token_addr = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'; //MAINNET DAI TOKEN ADDRESS
 //const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+//ABIS
+const congress_abi = require('../../build/contracts/Congress_abi.json');
 const dai_token_abi = require('../../build/contracts/ERC20_abi.json');
 let account;
 let congress;
 let dai;
 let members = [];
 const startBlock = 8184105; //MAINNET
-//const startBlock = 1080750 ;  //goerli test net
+//const startBlock = 1081000 ;  //goerli test net
 let minimum_quorum, majority_margin;
 
 window.App = {
@@ -56,8 +57,7 @@ window.App = {
       else document.getElementById("forMembers").className = 'hidden';
     })
     //PROPOSALS ADDED PREVIIOUSLY
-		let Ids = new Set();
-    let previousProposals = congress.LogProposalAdded({}, {fromBlock:startBlock, toBlock:'latest'});
+    /*let previousProposals = congress.LogProposalAdded({}, {fromBlock:startBlock, toBlock:'latest'});
     previousProposals.get(function(err, proposals) {
       if (err) return;
       for (let p=0; p<proposals.length; p++) {
@@ -66,10 +66,10 @@ window.App = {
 				Ids.add(proposalID);
         App.writeProposal(proposalID);
       }
-    })
-		//PROPOSALS FROM NOW ON
-		let newProposal = congress.LogProposalAdded({}, {fromBlock:'latest'});
-		newProposal.watch(function(err, proposal) {
+    })*/
+		//PROPOSALS FROM startBlock
+		let Ids = new Set();
+		congress.LogProposalAdded({}, {fromBlock:startBlock}, (err, proposal) => {
 			if (err) return;
 			let proposalID = Number(proposal.args.proposalID);
 			if (Ids.has(proposalID)) return;
@@ -178,7 +178,7 @@ window.App = {
       console.log("new proposal initiated" + res);
     })
   },
-
+	//WRITE PROPOSAL
   writeProposal: function(proposalID) {
     congress.proposals.call(proposalID, function(err, proposal) {
       if (err) return;
@@ -240,9 +240,7 @@ window.App = {
   get_bytecode: function(contract_addr, job_description) {
     switch(contract_addr) {
       case dai_token_addr:
-				//dai.balanceOf.call(contract_addr, (err, bal) => {
         return dai.transfer.getData(prompt("dai recipient"), prompt("amount $dai")*1e18);
-				//})
         break;
       case congress_addr:
         switch(job_description) {
@@ -272,6 +270,7 @@ window.addEventListener('load', async  function() {
       console.log("using ethereum.enable. Acccounts now exposed");
 		  congress = web3.eth.contract(congress_abi).at(congress_addr);
   		dai = web3.eth.contract(dai_token_abi).at(dai_token_addr);
+			//dai.balanceOf.call(congress_addr, (err, bal) => console.log(bal));
 	  	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
     } catch (error) {
       console.log("access denied" + error);
