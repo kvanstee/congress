@@ -8,11 +8,15 @@
 </head>
   <body>
 	<table>
-    <tbody id="balances"></tbody>
+    <tr id="balances"></tr>
 	</table>
   <h1> COMMUNITY LAND TRUST </h1>
     <div id="content">
-      <button onclick="App.donate()" href="#">DONATE</button><input  id="donate" placeholder="amount"><select id="crypto_currency"><option value="ETH">ETH</option><option value="DAI">DAI</option></select><br>
+      <button id="donate_button" href="#">DONATE</button>
+				<div id="donate_div" class="hidden">
+				<input  id="donate" placeholder="amount"><select id="crypto_currency"><option value="ETH">ETH</option><option value="DAI">DAI</option></select><br>
+				<button onclick="App.donate()" href="#">DONATE</button>
+				</div>
       <div id="forMembers" class="hidden">
         <button onclick="App.new_proposal()" href="#">NEW PROPOSAL</button>
           <select id="proposal_options">

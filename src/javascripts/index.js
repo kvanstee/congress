@@ -4,7 +4,8 @@ require('../stylesheets/app.css');
 const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
 //const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
 const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
-const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+//const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 //ABIs
 const congress_abi = require('../../build/contracts/Congress_abi.json');
@@ -17,7 +18,7 @@ let weth;
 let matching_market;
 let members = [];
 //const startBlock = 8256426; //MAINNET
-const startBlock = 750000; //goerli
+const startBlock = 1094000; //goerli
 let minimum_quorum, majority_margin, minutes_for_debate;
 
 window.App = {
@@ -49,67 +50,57 @@ window.App = {
 	  			}
         }
       }
-    })
-	  let _balances = document.createElement("tr");
-	  _balances.innerHTML = '<td></td><td></td><td></td>';
-	  let balances_elements = _balances.getElementsByTagName('td');
-		web3.eth.getBalance(congress_addr, (err,eth_bal) =>  {balances_elements[0] = "ETH" + eth_bal});
-		dai.balanceOf.call(congress_addr, (err,dai_bal) => {balances_elements[1] = "DAI" + dai_bal});
-		weth.balanceOf.call(congress_addr, (err,weth_bal) => {balances_elements[2] = "WETH" + weth+bal});
-		document.getElementById("balances").append(_balances);
+    })*/
+		document.getElementById("donate_button").onclick = function() {
+			document.getElementById("donate_button").className = 'hidden';
+			document.getElementById("donate_div").className = 'shown';
+		}
+		//BALANCES STRIP
+		let balances = document.getElementById("balances");
+	  balances.innerHTML = '<td></td><td></td><td></td>';
+	  let bals_elements = balances.getElementsByTagName('td');
+		App.writeBalances(bals_elements);
+		//REMOVE PREVIOUS PROPOSALS
 		let writtenProposals =  document.getElementById("activeProposals");
-		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);*/
+		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);
 		//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
-		congress.minimumQuorum.call(function(err, min_quorum) {
-      if (err) return;
-      minimum_quorum = min_quorum;
-    })
-    congress.majorityMargin.call(function(err, margin) {
-      if (err) return;
-      majority_margin = margin;
-    })
+		congress.minimumQuorum.call((err, min_quorum) => minimum_quorum = min_quorum);
+    congress.majorityMargin.call((err, margin) => majority_margin = margin);
 		//SHOW PROPOSALS IF MEMBER
-    congress.members.call(account, function(err,res) {
+    congress.members.call(account, (err,res) => {
       if (res[0]) document.getElementById("forMembers").className = 'shown';
       else document.getElementById("forMembers").className = 'hidden';
     })
-    //PROPOSALS ADDED PREVIIOUSLY
-    let previousProposals = congress.LogProposalAdded({}, {fromBlock:startBlock});
-    previousProposals.get(function(err, proposals) {
-      if (err) return;
-      for (let p=0; p<proposals.length; p++) {
-        let proposalID = Number(proposals[p].args.proposalID);
-        App.writeProposal(proposalID);
-      }
-    })
-		//PROPOSALS FROM NOW ON
-		let newProposal = congress.LogProposalAdded({}, {fromBlock:'latest'});
-		newProposal.watch(function(err, proposal) {
-			newProposal.stopWatching();
+		//PROPOSALS FROM startBlock
+		let Ids = new Set(); console.log(Ids);
+		let newProposal = congress.LogProposalAdded({}, {fromBlock:startBlock});
+		newProposal.watch((err, proposal) => {
 			if (err) return;
-			let proposalID = proposal.args.proposalID;
+			let proposalID = Number(proposal.args.proposalID);
+			if (Ids.has(proposalID)) return;
+			Ids.add(proposalID);
 			App.writeProposal(proposalID);
 		})
 		//DONATION RECEIPTS
-    congress.LogReceivedEther({}, function(err, res) {
+    congress.LogReceivedEther({}, (err, res) => {
       console.log(res.args);
     })
-    congress.LogReceivedTokens({}, function(err, res) {
+    congress.LogReceivedTokens({}, (err, res) => {
       console.log(res.args);
     })
     //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
-    congress.LogVoted({}, function(err, vote) {
+    congress.LogVoted({}, (err, vote) => {
       if (err) return err;
 	    let proposalID = Number(vote.args.proposalID);
       let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
-      congress.proposals.call(proposalID, function(err, proposal) {
+      congress.proposals.call(proposalID, (err, proposal) => {
         if (err) return err;
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
 				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
 				if (proposal[7] >= majority_margin) proposal_elements[5].style.color = "green";
 		  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
-		  	  proposal_elements[6].innerHTML = App.updateStatus(_proposalID, "execute"); //"<button id='" + proposalID + "ep'>EXECUTE</button>";
+		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
           document.getElementById(proposalID + "ep").onclick = function() {
             congress.executeProposal(proposalID, App.get_bytecode(proposal[0], proposal[2]), {gas:1e6}, function(err, res) {
 				      if (err) return err;
@@ -120,38 +111,40 @@ window.App = {
 				} else if (vote.args.voter === account) proposal_elements[6].innerHTML = "voted";
       })
     })
-    congress.LogProposalTallied({}, function(err, proposal) {
+    congress.LogProposalTallied({}, (err, proposal) => {
       if (err) return err;
       let status;
       proposal.args.active ? status="proposal passed" : status="proposal failed";
       document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[6].innerHTML = status; console.log(status);
       console.log("proposal votes tallied. Result: " + proposal.args);
     })
-    congress.LogChangeOfRules({}, function(err, newrules) {
+    congress.LogChangeOfRules({}, (err, newrules) => {
       if (err) return err;
       majority_margin = newrules.args.newMajorityMargin;
       minimum_quorum = newrules.args.newMinumumQuorum;
 			minutes_for_debate = newrules.args.newMinutesForDebate;
     })
   },
-	//END START FUNCTION
-  donate: function() {
+	//END OF App.start()
+  //DONATE
+	donate: function() {
     let donation = document.getElementById("donate").value*1e18;
-    if (document.getElementById("crypto_currency").value == "ETH") {
-      web3.eth.sendTransaction({from:account, to:congress_addr, value:donation, gas:4e4},  function(err, res) {
-        if (err) return err;
-        console.log("ether donation initiated");
-      })
-    }
-    if (document.getElementById("crypto_currency").value == "DAI") {;
-			dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
-      dai.transfer(congress_addr, donation, {from:account, gas:1e5},  function(err, res) {
-        if (err) return err;
-        console.log(donation/1e18 + "dai donation initiated");
-      })
+		switch (document.getElementById("crypto_currency").value) { 
+			case "ETH":
+	      web3.eth.sendTransaction({from:account, to:congress_addr, value:donation, gas:4e4}, (err, res) => {
+	        if (err) return err;
+	        console.log("ether donation initiated");
+	      })
+				break;
+			case "DAI":
+	      dai.transfer(congress_addr, donation, {from:account, gas:1e5},  function(err, res) {
+	        if (err) return err;
+	        console.log(donation/1e18 + "dai donation initiated");
+	      })
     }
   },
-  new_proposal: async function() {
+	//NEW PROPOSAL
+  new_proposal: function() {
     let proposal = document.getElementById("proposal_options").value;
     let transactionBytecode;
     let beneficiary;
@@ -164,42 +157,42 @@ window.App = {
         jobDescription = prompt("job description?");
 				break;
       case  "SEND_DAI":
-				weiAmount=0;
+				weiAmount=0; console.log("what");
         beneficiary = dai_token_addr; //dai token
         jobDescription = "send_dai";
 				break;
       case "ADD_MEMBER":
-				beneficiary=congress_addr; //this contract
+				beneficiary=congress_addr; //congress
 				weiAmount=0;
 				jobDescription="add_member";
 				break;
       case "REMOVE_MEMBER":
-				beneficiary=congress_addr; //this contract
+				beneficiary=congress_addr; //congress
 				weiAmount=0;
 				jobDescription="remove_member";
 				break;
       case "NEW_RULES":
-        beneficiary=congress_addr; //this contract
+        beneficiary=congress_addr; //congress contract
         weiAmount=0;
         jobDescription="change_voting_rules";
 				break;
 			case "ETH_TO_WETH":
-				beneficiary=weth_token_addr;
-				weiAmount=0;
+				beneficiary=weth_token_addr; //weth contract
+				weiAmount=prompt("amount of weth tokens to buy?")*1e18;
 				jobDescription="eth_to_weth";
 				break;
 			case "WETH_TO_ETH":
-				beneficiary=weth_token_addr;
+				beneficiary=weth_token_addr; //weth contract
         weiAmount=0;
         jobDescription="weth_to_eth";
 				break;
 			case "WETH_TO_DAI":
-				beneficiary=matching_market_addr;
+				beneficiary=matching_market_addr; //matching market contract
 				weiAmount=0;
         jobDescription="weth_to_dai";
 				break;
 			case "DAI_TO_WETH":
-				beneficiary=matching_market_addr;
+				beneficiary=matching_market_addr; //matching market contract
 				weiAmount=0;
         jobDescription="dai_to_weth";
 			case "UNLOCK_TO_SELL_DAI":
@@ -211,25 +204,16 @@ window.App = {
         beneficiary=weth_token_addr;
         weiAmount=0;
         jobDescription="unlock_weth";
-    } 
-		let bytecode = App.get_bytecode(beneficiary, jobDescription); console.log(bytecode);
-    congress.newProposal(beneficiary, weiAmount, jobDescription, bytecode, {gas:2e5}, function(err, res) {
+    }
+    congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription), {gas:2e5}, (err, res) => {
       if (err) return err;
       console.log("new proposal initiated" + res);
     })
   },
-	updateStatus: function(proposalID, status) {
-		switch (status) {
-			case "yesno":
-				return "<button id='" + proposalID + "true'>YES</button><button id='" + proposalID + "false'>NO</button>";
-				break;
-			case "vote":
-				return "<button id='" + proposalID + "cp'>VOTE</button>";
-				break;
-			case "execute":
-				return "<button id='" + proposalID + "ep'>EXECUTE</button>";
-				break;
-		}
+	writeBalances: function(elements) {
+		if (elements[0]) web3.eth.getBalance(congress_addr, (err,eth_bal) => elements[0].innerHTML = "ETH: " + eth_bal/1e18);
+		if (elements[1]) dai.balanceOf.call(congress_addr, (err,dai_bal) => elements[1].innerHTML = "DAI: " + dai_bal/1e18);
+		if (elements[2]) weth.balanceOf.call(congress_addr, (err,weth_bal) => elements[2].innerHTML = "WETH: " + weth_bal/1e18);
 	},
   writeProposal: function(proposalID) {
     congress.proposals.call(proposalID, function(err, proposal) {
@@ -250,15 +234,9 @@ window.App = {
 		  document.getElementById("activeProposals").append(_proposal);
 		  (Number(proposal[6]) >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 		  (Number(proposal[7]) >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
-			if (Number(proposal[6]) === 0) {
-				if (Number(proposal[1])>0) {
-					 proposal_elements[6].innerHTML = App.updateStatus(_proposal.id, "yesno");
-				}
-				else proposal_elements[6].innerHTML = App.updateStatus(_proposal.id, "vote");
-			}
 			//IF CONDITIONS ALLOW EXECUTION write execute button
 			if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
-	      proposal_elements[6].innerHTML = App.updateStatus(_proposal.id, "execute");
+	      proposal_elements[6].innerHTML = "<button id='" + _proposal.id + "ep'>EXECUTE</button>";
 	      document.getElementById(_proposal.id + "ep").onclick = function() {
 	        congress.executeProposal(_proposal.id, App.get_bytecode(proposal[0], proposal[2]), {gas:1e6}, function(err, res){
 	        	if (err) return err;
@@ -271,96 +249,73 @@ window.App = {
 			  voted.get(function(err, vote) {
 			    if (err) return err;
 			    if (vote.length === 0) { //you haven't voted so write vote buttons
-						//WRITE VOTE BUTTONS with onclick functions
-		        if (proposal[1] > 0) { //ether transaction, write straight yes/no buttons
-			        proposal_elements[6].innerHTML = App.updateStatus(_proposal.id, "yesno"); //"<button onclick = 'App.vote(" + _proposal.id + "," + true + ")' href='#'>YES</button><button onclick= 'App.vote(" + _proposal.id + "," + false + ")' href='#'>NO</button>";    //<input type='radio' name='vote' value='true'><label for='true'>YES</label><input type='radio' name='vote' value='false'><label for='false'>NO</label>"
-		        } else  { //contract proposal interaction, write vote button to trigger bytecode check
-			        proposal_elements[6].innerHTML = App.updateStatus(_proposal.id, "vote"); //"<button id='" + _proposal.id + "cp'>VOTE</button>";
-			        document.getElementById(_proposal.id + "cp").onclick = function() {
-			          congress.checkProposalCode(_proposal.id, proposal[0], 0, App.get_bytecode(proposal[0], proposal[2]), function(err, code_checks) {
-									if (err) return;
-		              if (code_checks) { //write YES/NO buttons if bytecode checks true
-				            proposal_elements[6].innerHTML = App.updateStatus(_proposal.id, "yesno"); //"<button id='" + _proposal.id + "true'>YES</button><button id='" + _proposal.id + "false'>NO</button>";
-						        document.getElementById(_proposal.id + "true").onclick = function() {
-											App.vote(_proposal.id, true, function(err, res) {
-												if (err) return;
-							        	document.getElementById(_proposal.id + "true").disabled = true;
-											})
-										}
-										document.getElementById(_proposal.id + "false").onclick = function() {
-						          App.vote(_proposal.id, false, function(err, res) {
-										  	if (err) return;
-						          	document.getElementById(_proposal.id + "false").disabled = true;
-											})
-						        }
-				          } else alert("proposal check returned false");
-			          })
-			        }
-			      } //ELSE YOU HAVE VOTED so write "voted"
+		        proposal_elements[6].innerHTML = "<button id='" + _proposal.id + "cp'>VOTE</button>";
+		        document.getElementById(_proposal.id + "cp").onclick = function() {
+		          congress.checkProposalCode(_proposal.id, proposal[0], proposal[1], App.get_bytecode(proposal[0], proposal[2]), (err, code_checks) => {
+								if (err) return;
+	              if (code_checks) { //write YES/NO buttons if bytecode checks true
+			            proposal_elements[6].innerHTML = "<button id='" + _proposal.id + "true'>YES</button><button id='" + _proposal.id + "false'>NO</button>";
+					        document.getElementById(_proposal.id + "true").onclick = function() {
+								    congress.vote(_proposal.id, true, "", {from:account, gas:1e5}, (err, res) => {
+											if (err) return;
+						        	document.getElementById(_proposal.id + "true").disabled = true;
+										})
+									}
+									document.getElementById(_proposal.id + "false").onclick = function() {
+								    congress.vote(_proposal.id, false, "", {from:account, gas:1e5}, (err, res) => {
+									  	if (err) return;
+					          	document.getElementById(_proposal.id + "false").disabled = true;
+										})
+					        }
+			          } else alert("proposal check returned false");
+		          })
+		        }
 			  	} else 	proposal_elements[6].innerHTML = "voted";
 				})
 			}
 		})
 	},
-  vote: function(proposalNumber,vote) {
-    let _justificationText = "";
-    congress.vote(proposalNumber, vote, _justificationText, {from:account, gas:1e5}, function(err, res) {
-      if (err) return err;
-    })
-  },
+	//GET BYTECODE
   get_bytecode: function(contract_addr, job_description) {
     switch(contract_addr) {
 			case weth_token_addr:
 				switch(job_description) {
 					case  "weth_to_eth":
-						weth.balanceOf.call(congress_addr, function(err,bal) {
-							if (err) return;
-							return weth.withdraw.getData(congress_addr, prompt("amount of eth to withraw?", bal/1e18)*1e18);
-						})
+						return weth.withdraw.getData(prompt("amount of eth to withraw?")*1e18);
 						break;
 					case "eth_to_weth":
-						web3.eth.getBalance(congress_addr, function(err, bal) {
-							if (err) return;
-							return weth.deposit.getData(congress_addr, prompt("amount eth to deposit?", bal/1e18)*1e18);
-						})
+						return weth.deposit.getData();
 						break;
 					case "unlock_weth":
-						weth.balanceOf.call(congress_addr, function(err,bal) {
-							if (err) return;
-							return weth.approve.getData(matching_market_addr, prompt("amount weth to unlock for matching market?", bal/1e18));
-						})
-					default: console.log("hello1");
+						//weth.balanceOf.call(congress_addr, (err,bal) => {
+							return weth.approve.getData(matching_market_addr, prompt("amount weth to unlock for matching market?"));
+						//})
+					default: return "";
 				};
 			case matching_market_addr:
 				matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
         switch(job_description) {
 					case "dai_to_weth":
-						dai.allowance.call(account, matching_market_addr, function(err,bal) {
-							if (err) return;
-							return matching_market.sellAllAmount.getData(dai_token_addr, prompt("amount $dai to convert to weth?", bal/1e18)*1e18, weth_token_addr, 5e15);
-						})
+						//dai.allowance.call(account, matching_market_addr, (err,bal) => {
+							return matching_market.sellAllAmount.getData(dai_token_addr, prompt("amount $dai to convert to weth?")*1e18, weth_token_addr, 5e15);
+						//})
 						break;
 					case "weth_to_dai":
-						weth = web3.eth.contract(ERC20_token_abi).at(weth_token_addr);
-						weth.allowance.call(account, matching_market_addr, function(err,bal) {
-							if (err) return;
-							return matching_market.sellAllAmount.getData(weth_token_addr, prompt("amount weth to convert to dai?", bal/1e18)*1e18, dai_token_addr, 5e15);
-						})
+						//weth.allowance.call(account, matching_market_addr, function(err,bal) {
+							return matching_market.sellAllAmount.getData(weth_token_addr, prompt("amount weth to convert to dai?")*1e18, dai_token_addr, 5e15);
+						//})
 					default:
 				};
       case dai_token_addr:
-				dai.balanceOf.call(congress_addr, (err, bal) => {
-					if (err) return err;
-        	switch(job_description) {
-						case "send_dai":
-        			return dai.transfer.getData(prompt("dai recipient?"), prompt("amount $dai?", bal/1e18)*1e18);
-        			break;
-						case "unlock_dai":
-							return dai.approve.getData(matching_market_addr, prompt("amount $dai for instant trade?", bal/1e18)*1e18);
-							break;
-						default: console.log("hello");
-					};
-				})
+      	switch(job_description) {
+					case "send_dai":
+      			return dai.transfer.getData(prompt("dai recipient?"), prompt("amount $dai?")*1e18);
+      			break;
+					case "unlock_dai":
+						return dai.approve.getData(matching_market_addr, prompt("amount $dai for instant trade?")*1e18);
+						break;
+					default: console.log(job_description);
+				};
       case congress_addr:
         switch(job_description) {
           case "change_voting_rules":
@@ -414,9 +369,8 @@ window.addEventListener('load', async  function() {
   congress = web3.eth.contract(congress_abi).at(congress_addr);
 	dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
   weth = web3.eth.contract(ERC20_token_abi).at(weth_token_addr);
+	//weth.balanceOf.call(congress_addr, (err, res) => {console.log(res/1e18)});
 	matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
-	App.start(web3.eth.accounts[0]);
-  ethereum.on('accountsChanged', function (accounts) {
-    App.start(web3.eth.accounts[0]);
-  })
+	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
+  ethereum.on('accountsChanged', (accounts) => App.start(accounts[0]));
 });
