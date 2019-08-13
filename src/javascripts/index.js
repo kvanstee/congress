@@ -18,7 +18,7 @@ let weth;
 let matching_market;
 let members = [];
 //const startBlock = 8256426; //MAINNET
-const startBlock = 1094000; //goerli
+const startBlock = 1110000; //goerli
 let minimum_quorum, majority_margin, minutes_for_debate;
 
 window.App = {
@@ -56,10 +56,7 @@ window.App = {
 			document.getElementById("donate_div").className = 'shown';
 		}
 		//BALANCES STRIP
-		let balances = document.getElementById("balances");
-	  balances.innerHTML = '<td></td><td></td><td></td>';
-	  let bals_elements = balances.getElementsByTagName('td');
-		App.writeBalances(bals_elements);
+		App.writeBalances();
 		//REMOVE PREVIOUS PROPOSALS
 		let writtenProposals =  document.getElementById("activeProposals");
 		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);
@@ -83,9 +80,11 @@ window.App = {
 		})
 		//DONATION RECEIPTS
     congress.LogReceivedEther({}, (err, res) => {
+			App.writeBalances();
       console.log(res.args);
     })
-    congress.LogReceivedTokens({}, (err, res) => {
+    congress.LogReceivedTokens({_token:dai_token_addr}, (err, res) => {
+			App.writeBalances();
       console.log(res.args);
     })
     //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
@@ -93,12 +92,12 @@ window.App = {
       if (err) return err;
 	    let proposalID = Number(vote.args.proposalID);
       let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
-      congress.proposals.call(proposalID, (err, proposal) => {
+      congress.proposals.call(proposalID, (err, proposal) => {console.log(proposal[6],proposal[7]);
         if (err) return err;
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
 				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
-				if (proposal[7] >= majority_margin) proposal_elements[5].style.color = "green";
+				if (proposal[7] >= majority_margin)  proposal_elements[5].style.color = "green";
 		  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
 		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
           document.getElementById(proposalID + "ep").onclick = function() {
@@ -116,7 +115,8 @@ window.App = {
       let status;
       proposal.args.active ? status="proposal passed" : status="proposal failed";
       document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[6].innerHTML = status; console.log(status);
-      console.log("proposal votes tallied. Result: " + proposal.args);
+      console.log("proposal votes tallied. Proposal ID: " + proposal.args.proposalID);
+			App.writeBalances();
     })
     congress.LogChangeOfRules({}, (err, newrules) => {
       if (err) return err;
@@ -137,7 +137,7 @@ window.App = {
 	      })
 				break;
 			case "DAI":
-	      dai.transfer(congress_addr, donation, {from:account, gas:1e5},  function(err, res) {
+	      dai.approveAndCall(congress_addr, donation, "0x", {from:account, gas:1e5}, (err, res) => {
 	        if (err) return err;
 	        console.log(donation/1e18 + "dai donation initiated");
 	      })
@@ -210,10 +210,22 @@ window.App = {
       console.log("new proposal initiated" + res);
     })
   },
-	writeBalances: function(elements) {
-		if (elements[0]) web3.eth.getBalance(congress_addr, (err,eth_bal) => elements[0].innerHTML = "ETH: " + eth_bal/1e18);
-		if (elements[1]) dai.balanceOf.call(congress_addr, (err,dai_bal) => elements[1].innerHTML = "DAI: " + dai_bal/1e18);
-		if (elements[2]) weth.balanceOf.call(congress_addr, (err,weth_bal) => elements[2].innerHTML = "WETH: " + weth_bal/1e18);
+	//WRITE BALANCES
+	writeBalances: function(token) {
+		switch (token) {
+			case dai_token_addr:
+				break;
+			case weth_token_addr:
+				break;
+			default:
+				dai.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
+					dai.balanceOf.call(congress_addr, (err,dai_bal) => document.getElementById("dai_bal").innerHTML = "DAI: " + dai_bal/1e18 + " (" + allow/1e18 + ")");
+				})
+				weth.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
+					weth.balanceOf.call(congress_addr, (err,weth_bal) => document.getElementById("weth_bal").innerHTML = "WETH: " + weth_bal/1e18 + " (" + allow/1e18 + ")");
+        })
+				web3.eth.getBalance(congress_addr, (err,eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + eth_bal/1e18);
+		}
 	},
   writeProposal: function(proposalID) {
     congress.proposals.call(proposalID, function(err, proposal) {
