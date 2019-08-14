@@ -4,7 +4,7 @@ table {
 }
 
 td, th {
-  border: 2px #DDD solid; padding: 2px; cursor: pointer; width: 170px;
+  border: 2px #DDD solid; padding: 2px; cursor: pointer; width: 220px;
 }
 .executable {
   background-color: lightgreen;

@@ -17,9 +17,9 @@ let dai;
 let weth;
 let matching_market;
 let members = [];
-const startBlock = 8256426; //MAINNET
+const startBlock = 8347312; //MAINNET
 //const startBlock = 1110000; //goerli
-let minimum_quorum, majority_margin, minutes_for_debate;
+let minimum_quorum, majority_margin;
 
 window.App = {
   start: function(_account) {
@@ -55,21 +55,26 @@ window.App = {
 			document.getElementById("donate_button").className = 'hidden';
 			document.getElementById("donate_div").className = 'shown';
 		}
-		//BALANCES STRIP
-		App.writeBalances();
+
 		//REMOVE PREVIOUS PROPOSALS
 		let writtenProposals =  document.getElementById("activeProposals");
 		while (writtenProposals.hasChildNodes()) writtenProposals.removeChild(writtenProposals.lastChild);
 		//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
 		congress.minimumQuorum.call((err, min_quorum) => minimum_quorum = min_quorum);
     congress.majorityMargin.call((err, margin) => majority_margin = margin);
-		//SHOW PROPOSALS IF MEMBER
+		//MEMBERS ONLY
     congress.members.call(account, (err,res) => {
-      if (res[0]) document.getElementById("forMembers").className = 'shown';
-      else document.getElementById("forMembers").className = 'hidden';
+      if (res[0]) {
+				document.getElementById("forMembers").className = 'shown';
+				//BALANCES STRIP
+				let _proposal = document.createElement("tr");
+				_proposal.innerHTML = "<td id='eth_bal'></td><td id='dai_bal'></td><td id='weth_bal'></td>";
+				App.writeBalances();
+				document.getElementById("balances").append(_proposal);
+	 		} else document.getElementById("forMembers").className = 'hidden';
     })
 		//PROPOSALS FROM startBlock
-		let Ids = new Set(); console.log(Ids);
+		let Ids = new Set();
 		let newProposal = congress.LogProposalAdded({}, {fromBlock:startBlock});
 		newProposal.watch((err, proposal) => {
 			if (err) return;
@@ -81,18 +86,16 @@ window.App = {
 		//DONATION RECEIPTS
     congress.LogReceivedEther({}, (err, res) => {
 			App.writeBalances();
-      console.log(res.args);
     })
     congress.LogReceivedTokens({_token:dai_token_addr}, (err, res) => {
 			App.writeBalances();
-      console.log(res.args);
     })
     //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
     congress.LogVoted({}, (err, vote) => {
       if (err) return err;
 	    let proposalID = Number(vote.args.proposalID);
       let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
-      congress.proposals.call(proposalID, (err, proposal) => {console.log(proposal[6],proposal[7]);
+      congress.proposals.call(proposalID, (err, proposal) => {
         if (err) return err;
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
@@ -114,7 +117,7 @@ window.App = {
       if (err) return err;
       let status;
       proposal.args.active ? status="proposal passed" : status="proposal failed";
-      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[6].innerHTML = status; console.log(status);
+      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[6].innerHTML = status;
       console.log("proposal votes tallied. Proposal ID: " + proposal.args.proposalID);
 			App.writeBalances();
     })
@@ -157,7 +160,7 @@ window.App = {
         jobDescription = prompt("job description?");
 				break;
       case  "SEND_DAI":
-				weiAmount=0; console.log("what");
+				weiAmount=0;
         beneficiary = dai_token_addr; //dai token
         jobDescription = "send_dai";
 				break;
@@ -219,12 +222,12 @@ window.App = {
 				break;
 			default:
 				dai.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
-					dai.balanceOf.call(congress_addr, (err,dai_bal) => document.getElementById("dai_bal").innerHTML = "DAI: " + dai_bal/1e18 + " (" + allow/1e18 + ")");
+					dai.balanceOf.call(congress_addr, (err,dai_bal) => document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0) + " (" + (allow/1e18).toFixed(0) + ")");
 				})
 				weth.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
-					weth.balanceOf.call(congress_addr, (err,weth_bal) => document.getElementById("weth_bal").innerHTML = "WETH: " + weth_bal/1e18 + " (" + allow/1e18 + ")");
+					weth.balanceOf.call(congress_addr, (err,weth_bal) => document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")");
         })
-				web3.eth.getBalance(congress_addr, (err,eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + eth_bal/1e18);
+				web3.eth.getBalance(congress_addr, (err,eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
 		}
 	},
   writeProposal: function(proposalID) {
@@ -300,7 +303,7 @@ window.App = {
 						break;
 					case "unlock_weth":
 						//weth.balanceOf.call(congress_addr, (err,bal) => {
-							return weth.approve.getData(matching_market_addr, prompt("amount weth to unlock for matching market?"));
+							return weth.approve.getData(matching_market_addr, prompt("amount weth to unlock for matching market?")*1e18);
 						//})
 					default: return "";
 				};
@@ -314,7 +317,7 @@ window.App = {
 						break;
 					case "weth_to_dai":
 						//weth.allowance.call(account, matching_market_addr, function(err,bal) {
-							return matching_market.sellAllAmount.getData(weth_token_addr, prompt("amount weth to convert to dai?")*1e18, dai_token_addr, 5e15);
+							return matching_market.sellAllAmount.getData(weth_token_addr, Number(prompt("amount weth to convert to dai?"))*1e18, dai_token_addr, 5e15);
 						//})
 					default:
 				};
