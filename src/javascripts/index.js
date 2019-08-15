@@ -8,9 +8,9 @@ const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET 
 //const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 //ABIs
-const congress_abi = require('../../build/contracts/Congress_abi.json');
-const matching_market_abi= require('../../build/contracts/Matching_market_abi_min.json');
-const ERC20_token_abi = require('../../build/contracts/ERC20_abi.json');
+const congress_abi = require('../../build/abis/Congress_abi.json');
+const matching_market_abi= require('../../build/abis/Matching_market_abi_min.json');
+const ERC20_token_abi = require('../../build/abis/ERC20_abi.json');
 let account;
 let congress;
 let dai;
