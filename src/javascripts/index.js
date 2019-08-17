@@ -1,15 +1,15 @@
 require('../stylesheets/app.css');
 //import { default as Web3} from 'web3';
-const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
-const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
-//const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
-const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
-//const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
+//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+//const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
+const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+//const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
-const matching_market_abi= require('../../build/abis/Matching_market_abi_min.json');
+const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
 const ERC20_token_abi = require('../../build/abis/ERC20_abi.json');
 let account;
 let congress;
@@ -17,12 +17,12 @@ let dai;
 let weth;
 let matching_market;
 let members = [];
-const startBlock = 8347312; //MAINNET
-//const startBlock = 1110000; //goerli
+//const startBlock = 8347312; //MAINNET
+const startBlock = 1110000; //goerli
 let minimum_quorum, majority_margin;
 
 window.App = {
-  start: async function(_account) {
+  start: function(_account) {
     account = _account;
     //create array of members
     /*congress.LogMembershipChanged({},  function(err, change) {
@@ -91,7 +91,7 @@ window.App = {
 							App.writeProposal(proposalID);
 						}
 					})
-					//WRITE NEW PROPOSAL
+					//WATCH FOR AND WRITE NEW PROPOSAL
 					let newProposal = congress.LogProposalAdded({}, {fromBlock:startBlock});
 					newProposal.watch((err, proposal) => {
 						if (err) return;
@@ -123,6 +123,7 @@ window.App = {
 							} else if (vote.args.voter === account) proposal_elements[6].innerHTML = "voted";
 			    	})
 					})
+					//WATCH FOR PROPOSALTALLIED
 			    congress.LogProposalTallied({}, (err, proposal) => {
 			      if (err) return err;
 			      let status;
@@ -131,6 +132,7 @@ window.App = {
 			      console.log("proposal votes tallied. Proposal ID: " + proposal.args.proposalID);
 						App.writeBalances();
 			    })
+					// WATCH FOR CHANGE OF RULES
 			    congress.LogChangeOfRules({}, (err, newrules) => {
 			      if (err) return err;
 			      majority_margin = newrules.args.newMajorityMargin;
@@ -268,11 +270,15 @@ window.App = {
 			case weth_token_addr:
 				break;
 			default:
-				dai.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
-					dai.balanceOf.call(congress_addr, (err,dai_bal) => document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0) + " (" + (allow/1e18).toFixed(0) + ")");
+				dai.balanceOf.call(congress_addr, (err,dai_bal) => {
+					dai.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
+						document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0) + " (" + (allow/1e18).toFixed(0) + ")";
+					})
 				})
-				weth.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
-					weth.balanceOf.call(congress_addr, (err,weth_bal) => document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")");
+				weth.balanceOf.call(congress_addr, (err,weth_bal) => {
+					weth.allowance.call(congress_addr, matching_market_addr, (err, allow) => {
+						document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
+					})
         })
 				web3.eth.getBalance(congress_addr, (err,eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
 		}
@@ -324,23 +330,17 @@ window.App = {
 						return weth.deposit.getData();
 						break;
 					case "unlock_weth":
-						//weth.balanceOf.call(congress_addr, (err,bal) => {
 							return weth.approve.getData(matching_market_addr, prompt("amount weth to unlock for matching market?")*1e18);
-						//})
 					default: return "";
 				};
 			case matching_market_addr:
 				matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
         switch(job_description) {
 					case "dai_to_weth":
-						//dai.allowance.call(account, matching_market_addr, (err,bal) => {
 							return matching_market.sellAllAmount.getData(dai_token_addr, prompt("amount $dai to convert to weth?")*1e18, weth_token_addr, 5e15);
-						//})
 						break;
 					case "weth_to_dai":
-						//weth.allowance.call(account, matching_market_addr, function(err,bal) {
 							return matching_market.sellAllAmount.getData(weth_token_addr, Number(prompt("amount weth to convert to dai?"))*1e18, dai_token_addr, 5e15);
-						//})
 					default:
 				};
       case dai_token_addr:
