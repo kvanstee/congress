@@ -1,0 +1,143 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "pay_amt",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "name": "pay_gem",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "buy_amt",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "name": "buy_gem",
+        "type": "address"
+      }
+    ],
+    "name": "LogTrade",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "name": "pair",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "name": "maker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "pay_gem",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "buy_gem",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "take_amt",
+        "type": "uint128"
+      },
+      {
+        "indexed": false,
+        "name": "give_amt",
+        "type": "uint128"
+      },
+      {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "LogTake",
+    "type": "event"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "pay_gem",
+        "type": "address"
+      },
+      {
+        "name": "pay_amt",
+        "type": "uint256"
+      },
+      {
+        "name": "buy_gem",
+        "type": "address"
+      },
+      {
+        "name": "min_fill_amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "sellAllAmount",
+    "outputs": [
+      {
+        "name": "fill_amt",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "buy_gem",
+        "type": "address"
+      },
+      {
+        "name": "buy_amt",
+        "type": "uint256"
+      },
+      {
+        "name": "pay_gem",
+        "type": "address"
+      },
+      {
+        "name": "max_fill_amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "buyAllAmount",
+    "outputs": [
+      {
+        "name": "fill_amt",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
