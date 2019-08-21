@@ -1,11 +1,11 @@
 require('../stylesheets/app.css');
 //import { default as Web3} from 'web3';
-const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
-const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
-//const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
-const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
-//const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
+//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+//const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
+const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+//const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
@@ -17,13 +17,13 @@ let dai;
 let weth;
 let matching_market;
 let members = [];
-const startBlock = 8347312; //MAINNET
-//const startBlock = 1134521; //goerli
+//const startBlock = 8347312; //MAINNET
+const startBlock = 1134521; //goerli
 let minimum_quorum, majority_margin;
 
 window.App = {
-  start: function(_account) {
-    account = _account;
+  start: function() {
+    //account = _account;
     //create array of members
     /*congress.LogMembershipChanged({},  function(err, change) {
       if (err) return err;
@@ -56,6 +56,7 @@ window.App = {
 			document.getElementById("donate_div").className = 'shown';
 		}
 		//MEMBERS ONLY
+		congress = web3.eth.contract(congress_abi).at(congress_addr);
     congress.members.call(account, (err,res) => {
 			switch (res[0]) { //ARE YOU  A MEMBER?
 				case false:
@@ -107,7 +108,7 @@ window.App = {
 						App.writeBalances();
 			    })
 			    //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
-			    congress.LogVoted({}, (err, vote) => {
+			    congress.LogVoted({}, (err, vote) => {console.log(vote.args.proposalID);
 			      if (err) return err;
 				    let proposalID = Number(vote.args.proposalID);
 			      let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
@@ -236,14 +237,14 @@ window.App = {
 	          if (code_checks) { //write YES/NO buttons if bytecode checks true
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "true'>YES</button><button id='" + id + "false'>NO</button>";
 				      document.getElementById(id + "true").onclick = function() {
-						    congress.vote(id, true, "", {from:account, gas:1e5}, (err, res) => {
-									if (err) return;
+						    congress.vote(id, true, "", {gas:1e5}, (err, res) => {
+									if (err) return err;
 				        	document.getElementById(id + "true").disabled = true;
 				        	document.getElementById(id + "false").disabled = true;
 								})
 							}
 							document.getElementById(id + "false").onclick = function() {
-						    congress.vote(id, false, "", {from:account, gas:1e5}, (err, res) => {
+						    congress.vote(id, false, "", {gas:1e5}, (err, res) => {
 							  	if (err) return;
 			          	document.getElementById(id + "false").disabled = true;
 				        	document.getElementById(id + "true").disabled = true;
@@ -382,7 +383,8 @@ window.addEventListener('load', async  function() {
     window.web3 = new Web3(ethereum);
     try {
       // Request account access if needed
-      await ethereum.enable();
+      account = await ethereum.enable();
+			App.start();
       console.log("using ethereum.enable. Acccounts now exposed");
     } catch (error) {
       console.log("access denied" + error);
@@ -397,7 +399,6 @@ window.addEventListener('load', async  function() {
         console.log('This is an unknown network.')
     }
   })
-	congress = web3.eth.contract(congress_abi).at(congress_addr);
-	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
-  ethereum.on('accountsChanged', (accounts) => App.start(accounts[0]));
+	//web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
+  //ethereum.on('accountsChanged', (accounts) => App.start(accounts[0]));
 });
