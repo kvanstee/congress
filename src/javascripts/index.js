@@ -22,8 +22,7 @@ const startBlock = 8347312; //MAINNET
 let minimum_quorum, majority_margin;
 
 window.App = {
-  start: function(_account) {
-    account = _account;
+  start: function(account) {
     //create array of members
     /*congress.LogMembershipChanged({},  function(err, change) {
       if (err) return err;
@@ -56,6 +55,7 @@ window.App = {
 			document.getElementById("donate_div").className = 'shown';
 		}
 		//MEMBERS ONLY
+		congress = web3.eth.contract(congress_abi).at(congress_addr);
     congress.members.call(account, (err,res) => {
 			switch (res[0]) { //ARE YOU  A MEMBER?
 				case false:
@@ -136,7 +136,6 @@ window.App = {
 			      if (err) return err;
 			      majority_margin = newrules.args.newMajorityMargin;
 			      minimum_quorum = newrules.args.newMinumumQuorum;
-						minutes_for_debate = newrules.args.newMinutesForDebate;
 			    })
 			}
 		})
@@ -382,7 +381,8 @@ window.addEventListener('load', async  function() {
     window.web3 = new Web3(ethereum);
     try {
       // Request account access if needed
-      await ethereum.enable();
+      account = await ethereum.enable();
+			App.start(account);
       console.log("using ethereum.enable. Acccounts now exposed");
     } catch (error) {
       console.log("access denied" + error);
@@ -397,7 +397,5 @@ window.addEventListener('load', async  function() {
         console.log('This is an unknown network.')
     }
   })
-	congress = web3.eth.contract(congress_abi).at(congress_addr);
-	web3.eth.getAccounts((err, accounts) => App.start(accounts[0]));
-  ethereum.on('accountsChanged', (accounts) => App.start(accounts[0]));
-});
+  //ethereum.on('accountsChanged', (accounts) => App.start(accounts[0]));
+})
