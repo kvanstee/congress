@@ -22,7 +22,7 @@ const startBlock = 8347312; //MAINNET
 let minimum_quorum, majority_margin;
 
 window.App = {
-  start: function(account) {
+  start: function() {
     //create array of members
     /*congress.LogMembershipChanged({},  function(err, change) {
       if (err) return err;
@@ -235,14 +235,14 @@ window.App = {
 	          if (code_checks) { //write YES/NO buttons if bytecode checks true
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "true'>YES</button><button id='" + id + "false'>NO</button>";
 				      document.getElementById(id + "true").onclick = function() {
-						    congress.vote(id, true, "", {from:account, gas:1e5}, (err, res) => {
+						    congress.vote(id, true, "", {gas:1e5}, (err, res) => {
 									if (err) return;
 				        	document.getElementById(id + "true").disabled = true;
 				        	document.getElementById(id + "false").disabled = true;
 								})
 							}
 							document.getElementById(id + "false").onclick = function() {
-						    congress.vote(id, false, "", {from:account, gas:1e5}, (err, res) => {
+						    congress.vote(id, false, "", {gas:1e5}, (err, res) => {
 							  	if (err) return;
 			          	document.getElementById(id + "false").disabled = true;
 				        	document.getElementById(id + "true").disabled = true;
@@ -382,7 +382,7 @@ window.addEventListener('load', async  function() {
     try {
       // Request account access if needed
       account = await ethereum.enable();
-			App.start(account);
+			App.start();
       console.log("using ethereum.enable. Acccounts now exposed");
     } catch (error) {
       console.log("access denied" + error);
