@@ -108,7 +108,7 @@ window.App = {
 						App.writeBalances();
 			    })
 			    //WATCH FOR VOTES FOR ANY PROPOSAL FROM NOW ON FROM ANYWHERE
-			    congress.LogVoted({}, (err, vote) => {console.log(vote.args.proposalID);
+			    congress.LogVoted({}, (err, vote) => {
 			      if (err) return err;
 				    let proposalID = Number(vote.args.proposalID);
 			      let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
