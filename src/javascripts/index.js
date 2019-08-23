@@ -119,7 +119,7 @@ window.App = {
 					  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
 					  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
 								App.click_event(proposalID, "execute", proposal);
-							} else if (vote.args.voter === account) {
+							} else if (vote.args.voter == account) {
 								proposal_elements[6].innerHTML = "VOTED!";
 							}
 			    	})
