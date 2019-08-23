@@ -119,7 +119,9 @@ window.App = {
 					  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
 					  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
 								App.click_event(proposalID, "execute", proposal);
-							} else if (vote.args.voter === account) proposal_elements[6].innerHTML = "VOTED!";
+							} else if (vote.args.voter === account) {
+								proposal_elements[6].innerHTML = "VOTED!";
+							}
 			    	})
 					})
 					//WATCH FOR PROPOSALTALLIED
@@ -210,6 +212,7 @@ window.App = {
 				beneficiary=matching_market_addr; //matching market contract
 				weiAmount=0;
         jobDescription="dai_to_weth";
+				break;
 			case "UNLOCK_TO_SELL_DAI":
 				beneficiary=dai_token_addr;
 				weiAmount=0;
