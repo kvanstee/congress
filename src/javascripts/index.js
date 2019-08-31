@@ -27,7 +27,8 @@ window.App = {
 			document.getElementById("donate_button").className = 'hidden';
 			document.getElementById("donate_div").className = 'shown';
 		}
-		document.getElementById("donate").onclick = function() {
+		dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
+    document.getElementById("donate").onclick = function() {
     	let donation = document.getElementById("donation").value*1e18;
 			switch (document.getElementById("crypto_currency").value) {
 				case "ETH":
@@ -62,7 +63,6 @@ window.App = {
 					break;
 				case true: //MEMBERS ONLY
 					let Ids = new Set();
-					dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
 				  weth = web3.eth.contract(ERC20_token_abi).at(weth_token_addr);
 					matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
 					document.getElementById("forMembers").className = 'shown';
