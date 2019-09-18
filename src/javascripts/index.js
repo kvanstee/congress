@@ -1,5 +1,5 @@
 require('../stylesheets/app.css');
-import { default as Web3} from 'web3';
+//import { default as Web3} from 'web3';
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
 const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
@@ -294,7 +294,7 @@ window.App = {
       if (err) return;
       if (proposal[4]) return;
 		  let _proposal = document.createElement("tr");
-		  _proposal.innerHTML = '<td align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td align="center"></td>';
+		  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>';
 		  _proposal.id = proposalID;
 		  let proposal_elements = _proposal.getElementsByTagName('td');
 		  //WRITE TABLE ROW (PROPOSAL)
@@ -333,7 +333,7 @@ window.App = {
 		      console.log("proposal votes tallied. Proposal ID: " + proposal.args.proposalID);
 		    })
 			} else { //SEE IF YOU VOTED
-				let voted = congress.LogVoted({proposalID:proposalID, voter:account}, {fromBlock:proposal.blockNumber});
+				let voted = congress.LogVoted({proposalID:proposalID, voter:account}, {fromBlock:startBlock});
 			  voted.get(function(err, vote) {
 			    if (err) return err;
 			    if (vote.length === 0) { //you haven't voted so write vote buttons
