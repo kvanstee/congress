@@ -1,14 +1,10 @@
 require('../stylesheets/app.css');
-//import { default as Web3} from 'web3';
+//ADDRESSES
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
 const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
-const startBlock = 8347312; //MAINNET*/
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
-/*const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
-const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
-const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
-const startBlock = 1295480; //goerli*/
+const startBlock = 8347312; //MAINNET*/
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
