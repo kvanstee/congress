@@ -1,23 +1,25 @@
 require('../stylesheets/app.css');
-//CONTRACT ADDRESSES
+//import { default as Web3} from 'web3';
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
 const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
-//const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
 const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
-//const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
+const startBlock = 8347312; //MAINNET*/
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
+/*const congress_addr = '0xac4364768626124d1aa0fe8dda0eec7c705a2390'; //goerli test net
+const dai_token_addr = '0xbf553b46a4e073085414effa419ad7504d837e03'; //goerli test tokenERC20
+const weth_token_addr = '0x00abd029d639862dd620be7a3337d0c7722ce1a4'; //goerli test weth9 contract
+const startBlock = 1295480; //goerli*/
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
 const ERC20_token_abi = require('../../build/abis/ERC20_abi.json');
+
 let account;
 let congress;
 let dai;
 let weth;
 let matching_market;
-const startBlock = 8347312; //MAINNET
-//const startBlock = 1196120; //goerli
+let members = [];
 let minimum_quorum, majority_margin;
 
 window.App = {
@@ -49,10 +51,12 @@ window.App = {
 		congress = web3.eth.contract(congress_abi).at(congress_addr);
 		//DONATION RECEIPTS
     congress.LogReceivedEther({}, (err, res) => {
+			if (err) return;
 			document.getElementById("donate").disabled = false;
 			App.writeBalances(congress_addr);
     })
     congress.LogReceivedTokens({_token:dai_token_addr}, (err, res) => {
+			if (err) return;
 			document.getElementById("donate").disabled = false;
 			App.writeBalances(dai_token_addr);
     })
@@ -78,18 +82,19 @@ window.App = {
 					congress.minimumQuorum.call((err, min_quorum) => minimum_quorum = min_quorum);
 			    congress.majorityMargin.call((err, margin) => majority_margin = margin);
 					//WRITE PREVIOUS PROPOSALS
-					let previousProposals = congress.LogProposalAdded({}, {fromBlock:startBlock});
+					let previousProposals = congress.LogProposalAdded({}, {from:account, fromBlock:startBlock});
 					previousProposals.get((err, proposals) => {
+            if (err) return;
 						for (let proposal of proposals) {
 							let proposalID = Number(proposal.args.proposalID);
-							congress.LogProposalTallied.call({proposalID:proposalID, active:true}, {fromBlock:proposal.blockNumber}, () => {
-								return;
+							let proposalTallied = congress.LogProposalTallied.call({proposalID:proposalID, active:true}, {fromBlock:proposal.blockNumber});
+							proposalTallied.get((err, res) => {
+                if (err) return;
+								if (res.length === 0) {
+									App.write_proposal(proposalID);
+                  Ids.add(proposalID);
+								}
 							})
-							Ids.add(proposalID);
-						}
-						for (let Id of Ids) {
-							App.write_proposal(Id);
-							App.watch_for_votes(Id);
 						}
 					})
 					//WATCH FOR AND WRITE NEW PROPOSAL
@@ -100,7 +105,6 @@ window.App = {
 						if (Ids.has(proposalID)) return;
 						Ids.add(proposalID);
 						App.write_proposal(proposalID);
-						App.watch_for_votes(proposalID);
 					})
 					// WATCH FOR CHANGE OF RULES
 			    congress.LogChangeOfRules({}, (err, newrules) => {
@@ -180,11 +184,12 @@ window.App = {
       console.log("new proposal initiated" + res);
     })
   },
-	watch_for_votes: function(proposalID) {
+	watch_for_vote: function(proposalID) {
 	  congress.LogVoted({proposalID:proposalID}, (err, vote) => {
-	    if (err) return;
+	    if (err) return; console.log(vote.args);
 	    let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
 	    congress.proposals.call(proposalID, (err, proposal) => {
+				if (err) return;
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
 				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
@@ -288,7 +293,7 @@ window.App = {
       if (err) return;
       if (proposal[4]) return;
 		  let _proposal = document.createElement("tr");
-		  _proposal.innerHTML = '<td align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td align="center"></td>';
+		  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>';
 		  _proposal.id = proposalID;
 		  let proposal_elements = _proposal.getElementsByTagName('td');
 		  //WRITE TABLE ROW (PROPOSAL)
@@ -306,6 +311,7 @@ window.App = {
 			if (Number(proposal[6]) === 0) { //no votes
 		    proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
 				App.click_event(proposalID, "vote", proposal);
+        App.watch_for_vote(proposalID);
 			}
 			//IF CONDITIONS ALLOW EXECUTION write execute button
 			else if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
@@ -331,7 +337,8 @@ window.App = {
 			    if (err) return err;
 			    if (vote.length === 0) { //you haven't voted so write vote buttons
 		        proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
-						App.click_event(proposalID, "vote", proposal);
+    				App.click_event(proposalID, "vote", proposal);
+            App.watch_for_vote(proposalID);
 		  		} else 	proposal_elements[6].innerHTML = "VOTED!";
 				})
 			}

@@ -1,10 +1,24 @@
+@media only screen and (max-width: 550px) {
+  td {
+		display: block;
+		max-width: 350px;
+		overflow: hidden;
+	}
+	th { 
+		display: none;
+	}
+	.head {font-weight: bold;}
+	.foot {margin-bottom: 20px;}
+}
+#donation {
+	width: 100px;
+}
 table {
-  display: inline-table;
   border-collapse: collapse;
 }
 
 td, th {
-  border: 2px #DDD solid; padding: 2px; cursor: pointer; width: 220px;
+  border: 2px #DDD solid; padding: 2px; cursor: pointer; text-overflow: ellipsis;
 }
 .executable {
   background-color: lightgreen;
