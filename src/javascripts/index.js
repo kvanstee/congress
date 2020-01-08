@@ -1,7 +1,7 @@
 require('../stylesheets/app.css');
 //ADDRESSES
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-const dai_token_addr = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'; //MAINNET DAI TOKEN ADDRESS
+const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
 const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 const startBlock = 8347312; //MAINNET*/
@@ -166,6 +166,9 @@ window.App = {
         beneficiary=weth_token_addr;
         weiAmount=0;
         jobDescription="unlock_weth";
+				break;
+			default:
+				return;
     }
     congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription), {gas:2e5}, (err, res) => {
       if (err) return err;
@@ -210,7 +213,7 @@ window.App = {
 		switch (action) {
 			case "vote":
 			  document.getElementById(id + "cp").onclick = () => {
-	        congress.checkProposalCode(id, proposal[0], proposal[1], App.get_bytecode(proposal[0], proposal[2]), (err, code_checks) => {
+	        congress.checkProposalCode(id, proposal[0], Number(proposal[1]), App.get_bytecode(proposal[0], proposal[2]), (err, code_checks) => {
 						if (err) return;
 	          if (code_checks) { //write YES/NO buttons if bytecode checks true
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "true'>YES</button><button id='" + id + "false'>NO</button>";
@@ -345,18 +348,21 @@ window.App = {
 						break;
 					case "unlock_weth":
 							return weth.approve.getData(matching_market_addr, prompt("amount weth to unlock for matching market?")*1e18);
-					default: return "";
+					default: console.log(job_description);
 				};
+				break;
 			case matching_market_addr:
 				matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
         switch(job_description) {
 					case "dai_to_weth":
-							return matching_market.sellAllAmount.getData(dai_token_addr, prompt("amount $dai to convert to weth?")*1e18, weth_token_addr, 5e15);
+						return matching_market.sellAllAmount.getData(dai_token_addr, prompt("amount $dai to convert to weth?")*1e18, weth_token_addr, 5e15);
 						break;
 					case "weth_to_dai":
-							return matching_market.sellAllAmount.getData(weth_token_addr, Number(prompt("amount weth to convert to dai?"))*1e18, dai_token_addr, 5e15);
-					default:
+						return matching_market.sellAllAmount.getData(weth_token_addr, Number(prompt("amount weth to convert to dai?"))*1e18, dai_token_addr, 5e15);
+						break;
+					default: console.log(job_description);
 				};
+				break;
       case dai_token_addr:
       	switch(job_description) {
 					case "send_dai":
@@ -367,6 +373,7 @@ window.App = {
 						break;
 					default: console.log(job_description);
 				};
+				break;
       case congress_addr:
         switch(job_description) {
           case "change_voting_rules":
@@ -378,6 +385,7 @@ window.App = {
           case "remove_member":
             return congress.removeMember.getData(prompt("address of member to be removed?"));
         };
+				break;
       default:
         return "";
     }
