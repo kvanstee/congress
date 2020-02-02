@@ -1,2 +1,2 @@
 # congress
-DAO for Community Land Trust.
+shelterDAO is a distributed autonomous organisation. 
