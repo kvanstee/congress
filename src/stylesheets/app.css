@@ -1,7 +1,7 @@
-@media only screen and (max-width: 650px) {
+@media only screen and (max-width: 1085px) {
   td {
 		display: block;
-		max-width: 350px;
+		max-width: 700px;
 		overflow: hidden;
 	}
 	th { 
