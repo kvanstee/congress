@@ -2,17 +2,15 @@
   "name": "congress",
   "version": "1.0.0",
   "description": "community land trust",
-  "main": "truffle.js",
+  "main": "index.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
     "css-loader": "^2.1.1",
-    "webpack": "^4.33.0",
-    "style-loader": "^0.13.2"
+    "webpack": "^4.33.0"
   },
   "devDependencies": {
-    "web3": "latest",
     "webpack-cli": "^3.2.1"
   },
   "scripts": {
