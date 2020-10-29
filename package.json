@@ -1,15 +1,16 @@
 {
   "name": "congress",
   "version": "1.0.0",
-  "description": "community land trust",
-  "main": "truffle.js",
+  "description": "multi-sig contract interaction",
+  "main": "index.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
+    "@metamask/detect-provider": "^1.2.0",
     "css-loader": "^2.1.1",
-    "webpack": "^4.33.0",
-    "style-loader": "^0.13.2"
+    "style-loader": "^2.0.0",
+    "webpack": "^4.33.0"
   },
   "devDependencies": {
     "web3": "latest",

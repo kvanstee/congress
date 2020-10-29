@@ -1,3 +1,4 @@
+import detectEthereumProvider from '@metamask/detect-provider';
 require('../stylesheets/app.css');
 //ADDRESSES
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
@@ -10,7 +11,7 @@ const congress_abi = require('../../build/abis/Congress_abi.json');
 const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
 const ERC20_token_abi = require('../../build/abis/ERC20_abi.json');
 
-let account;
+let account = null;
 let congress;
 let dai;
 let weth;
@@ -389,11 +390,36 @@ window.App = {
       default:
         return "";
     }
-  }
+  },
 },
+window.addEventListener('load', async () => {
+	const provider = await detectEthereumProvider();
+	if (provider !== window.ethereum) return console.error('Do you have multiple wallets installed?');
+	ethereum
+		.request({ method: 'eth_accounts' })
+		.then((accounts) => {
+		// For now, 'eth_accounts' will continue to always return an array
+		  if (accounts.length === 0) {
+		    // MetaMask is locked or the user has not connected any accounts
+		    console.log('Please connect to MetaMask.');
+		  } else if (accounts[0] !== account) {
+		    account = accounts[0];
+			  App.start(); // Initialize your app
+			} else console.log('Please install MetaMask!');
+		})
+		.catch((err) => {
+	    // Some unexpected error.
+	    // For backwards compatibility reasons, if no accounts are available,
+	    // eth_accounts will return an empty array.
+	    console.error(err);
+	  });
 
-window.addEventListener('load', async  () => {
-  // Checking if Web3 has been injected by the browser (Mist/MetaMask)
+	// Note that this event is emitted on page load.
+	// If the array of accounts is non-empty, you're already
+	// connected.
+	ethereum.on('accountsChanged', (accounts) => {if (accounts[0] !== account) account = accounts[0]});
+	//ethereum.on('chainChanged', () => window.location.reload());
+  /*/ Checking if Web3 has been injected by the browser (Mist/MetaMask)
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
     try {
@@ -413,5 +439,5 @@ window.addEventListener('load', async  () => {
       default:
         console.log('This is an unknown network.')
     }
-  })
-});
+  })*/
+})
