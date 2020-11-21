@@ -4,7 +4,7 @@ const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
 const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
-const startBlock = 8347312; //MAINNET*/
+const startBlock = 10215507; //MAINNET*/
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
