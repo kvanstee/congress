@@ -102,14 +102,14 @@ window.App = {
 					})
 					//WATCH FOR AND WRITE NEW PROPOSAL
 					congress.on('LogProposalAdded', (proposal) => {
-						let proposalID = Number(proposal.args.proposalID);
+						let proposalID = proposal.toNumber();
 						if (Ids.has(proposalID)) return;
 						Ids.add(proposalID);
 						App.write_proposal(proposalID);
 					})
 					/*/ WATCH FOR CHANGE OF RULES
 			    congress.on('LogChangeOfRules', (newrules) => {
-			      //if (err) return err;
+			     	if (err) return err;
 			      majority_margin = newrules.args.newMajorityMargin;
 			      minimum_quorum = newrules.args.newMinumumQuorum;
 			    })*/
@@ -128,8 +128,7 @@ window.App = {
     switch (proposal) {
       case "SEND_ETH":
         beneficiary = prompt("address beneficiary?");
-				let weiAmount = ethers.BigNumber.from(prompt("amount ether?")).pow(18);
-				console.log(weiAmount)
+				weiAmount = ethers.BigNumber.from(10).pow(18).mul(prompt("amount ether?"));
         jobDescription = prompt("job description?");
 				break;
       case "SEND_DAI":
@@ -154,7 +153,7 @@ window.App = {
 				break;
 			case "ETH_TO_WETH":
 				beneficiary=weth_token_addr; //weth contract
-				weiAmount=ethers.BigNumber.from(prompt("amount of weth tokens to buy?")).pow(18);
+				weiAmount=ethers.BigNumber.from(10).pow(18).mul(prompt("amount of weth tokens to buy?"));
 				jobDescription="eth_to_weth";
 				break;
 			case "WETH_TO_ETH":
@@ -184,10 +183,10 @@ window.App = {
 				break;
 			default:
 				return;
-    }
-		congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then((res) => {
+    }//console.log(App.get_bytecode(beneficiary, jobDescription));
+		congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
       //if (err) return err;
-      console.log("new proposal initiated" + res);
+      console.log("new proposal initiated");
     })
   },
 	watch_for_vote: (proposalID) => {
@@ -404,7 +403,7 @@ window.App = {
         };
 				break;
       default:
-        return "";
+        return "0x";
     }
   },
 },
