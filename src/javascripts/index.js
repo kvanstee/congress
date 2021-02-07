@@ -7,7 +7,7 @@ const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
 const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 //const startBlock = 10215507; //MAINNET
-const startBlock = 0;
+const startBlock = 0; //8000000; ethers.BigNumber.from(10).pow(6).mul(8); console.log(startBlock);
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
@@ -52,6 +52,13 @@ window.App = {
 		}
 		//congress = web3.eth.contract(congress_abi).at(congress_addr);
 		congress = new ethers.Contract(congress_addr, congress_abi, _provider);
+		congress.queryFilter('LogProposalTallied', startBlock).then((_proposals) => {
+			for (let prop of _proposals) {
+				congress.proposals((prop.args.proposalID)).then((proposal) => {
+					if (proposal[2] == "add_member") console.log(prop.blockNumber);
+				})
+			}
+		});
 		//members = await congress.members(); console.log(members);
 		/*/DONATION RECEIPTS
     congress.LogReceivedEther({}, (err, res) => {
@@ -191,11 +198,12 @@ window.App = {
   },
 	watch_for_vote: (proposalID) => {
 		let filter = congress.filters.LogVoted(proposalID);
-	  congress.on(filter, (vote) => {
+		let voted = congress.queryFilter(filter);
+	  congress.on(voted, (_voted) => {
 	    //if (err) return;
 	    let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
 	    congress.proposals(proposalID).then((proposal) => {
-				if (err) return;
+				//if (err) return;
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
 				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
@@ -217,8 +225,8 @@ window.App = {
 						else  status="PROPOSAL FAILED!";
 			      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[6].innerHTML = status;
 			      console.log("proposal votes tallied. Proposal ID: " + proposal.args.proposalID);
-			    })
-				} else if (vote.args.voter == account) {
+			    });
+				} else if (_voted.args[2].toLowerCase() === account.toLowerCase()) {
 					proposal_elements[6].innerHTML = "VOTED!";
 				}
 	  	})
@@ -230,20 +238,19 @@ window.App = {
 			case "vote":
 			  document.getElementById(id + "cp").onclick = () => {
 	        congress.checkProposalCode(id, proposal[0], proposal[1], App.get_bytecode(proposal[0], proposal[2])).then((code_checks) => {
-						if (err) return;
+						//if (err) return;
 	          if (code_checks) { //write YES/NO buttons if bytecode checks true
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "true'>YES</button><button id='" + id + "false'>NO</button>";
 				      document.getElementById(id + "true").onclick = () => {
-						    congress.vote(id, true, "", {gas:1e5}, (err, res) => {
-									if (err) return err;
+						    congress.vote(id, true, "").then((res) => {
 			            App.watch_for_vote(id);
 				        	document.getElementById(id + "true").disabled = true;
 				        	document.getElementById(id + "false").disabled = true;
 								})
 							}
 							document.getElementById(id + "false").onclick = () => {
-						    congress.vote(id, false, "", {gas:1e5}, (err, res) => {
-							  	if (err) return;
+						    congress.vote(id, false, "").then((res) => {
+							  	//if (err) return;
 			            App.watch_for_vote(id);
 			          	document.getElementById(id + "false").disabled = true;
 				        	document.getElementById(id + "true").disabled = true;
@@ -255,8 +262,8 @@ window.App = {
 				break;
 			case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
-	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2]), {gas:1e6}, function(err, res){
-	        	if (err) return err;
+	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then((res) => {
+	        	console.log(res);
 	        	document.getElementById(id + "ep").disabled = true;
 					})
 	      }
