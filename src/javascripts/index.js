@@ -365,6 +365,7 @@ window.App = {
 				switch(job_description) {
 					case  "weth_to_eth":
 						return weth.withdraw.getData(prompt("amount of eth to withraw?")*1e18);
+						//return iface.encodeFunctionData("
 						break;
 					case "eth_to_weth":
 						return weth.deposit.getData();
@@ -398,15 +399,19 @@ window.App = {
 				};
 				break;
       case congress_addr:
+				let congr_iface = new ethers.utils.Interface(congress_abi); console.log(congr_iface);
         switch(job_description) {
           case "change_voting_rules":
-            return congress.changeVotingRules.getData(prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?"));
+            //return congress.changeVotingRules.getData(prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?"));
+						return congr_iface.encodeFunctionData("changeVotingRules", [prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?")]);
 	    			break;
           case "add_member":
-            return congress.addMember.getData(prompt("new member address?"), prompt("name of new member?"));
+            // return congress.addMember.getData(prompt("new member address?"), prompt("name of new member?"));
+						return congr_iface.encodeFunctionData("addMember", [prompt("new member address?"), prompt("name of new member?")]);
 	    			break;
           case "remove_member":
-            return congress.removeMember.getData(prompt("address of member to be removed?"));
+            //return congress.removeMember.getData(prompt("address of member to be removed?"));
+						return congr_iface.encodeFunctionData("removeMember", [prompt("address of member to be removed?")]);
         };
 				break;
       default:
