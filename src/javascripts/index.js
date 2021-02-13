@@ -29,7 +29,7 @@ window.App = {
 			document.getElementById("donate_div").className = 'shown';
 		}
 		document.getElementById("donate").onclick = () => {
-    	let donation = ethers.BigNumber(document.getElementById("donation")).pow(18);
+    	let donation = document.getElementById("donation").value*1e18;
 			document.getElementById("donate").disabled = true;
 			switch (document.getElementById("crypto_currency").value) {
 				case "ETH":
@@ -44,7 +44,7 @@ window.App = {
 				case "DAI":
 					//dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
 					dai = new ethers.Contract(dai_token_addr, ERC20_token_abi, _provider);
-		      dai.approveAndCall(congress_addr, donation, "0x", {from:account, gas:1e5}, (err, res) => {
+		      dai.approveAndCall(congress_addr, donation, "0x").then(( res) => {
 		        if (err) return err;
 		        console.log(donation/1e18 + "dai donation initiated");
 		      })
@@ -52,26 +52,19 @@ window.App = {
 		}
 		//congress = web3.eth.contract(congress_abi).at(congress_addr);
 		congress = new ethers.Contract(congress_addr, congress_abi, _provider);
-		congress.queryFilter('LogProposalTallied', startBlock).then((_proposals) => {
-			for (let prop of _proposals) {
-				congress.proposals((prop.args.proposalID)).then((proposal) => {
-					if (proposal[2] == "add_member") console.log(prop.blockNumber);
-				})
-			}
-		});
-		//members = await congress.members(); console.log(members);
-		/*/DONATION RECEIPTS
-    congress.LogReceivedEther({}, (err, res) => {
-			if (err) return;
+		congress.removeAllListeners();
+		//DONATION RECEIPTS
+    congress.queryFilter("LogReceivedEther").then((res) => {
 			document.getElementById("donate").disabled = false;
-			ethereum.request({method: eth_getBalance, params: [congress_addr]}).then((eth_bal) => {
-				document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
-				console.log(eth_bal);
+			ethereum.request({method: "eth_getBalance", params:[congress_addr]}).then((eth_balance) => {
+			//_provider.getBalance(congress_addr).then((eth_balance) => {console.log(eth_balance);
+				document.getElementById("eth_bal").innerHTML = "ETH: " + eth_balance/1e18.toFixed(2); //ethers.BigNumber.from(10).pow(18).toNumber().toFixed(2);
+				//document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_balance/1e18).toFixed(2);
+				//console.log(eth_balance);
 			})
 			//provider.getBalance(congress_addr);
     })
-    congress.LogReceivedTokens({_token:dai_token_addr}, (err, res) => {
-			if (err) return;
+    /*congress.LogReceivedTokens(dai_token_addr).then((res) => {
 			document.getElementById("donate").disabled = false;
 			App.writeBalances(dai_token_addr);
     })*/
@@ -82,16 +75,14 @@ window.App = {
 					break;
 				case true: //MEMBERS ONLY
 					const Ids = new Set();
-				  //weth = web3.eth.contract(ERC20_token_abi).at(weth_token_addr);
-					weth = new ethers.Contract(weth_token_addr, ERC20_token_abi, _provider);
-					//matching_market = web3.eth.contract(matching_market_abi).at(matching_market_addr);
-					matching_market = new ethers.Contract(matching_market_addr, matching_market_abi, _provider);
+					//weth = new ethers.Contract(weth_token_addr, ERC20_token_abi, _provider);
+					//matching_market = new ethers.Contract(matching_market_addr, matching_market_abi, _provider);
 					document.getElementById("forMembers").className = 'shown';
-					/*/BALANCES STRIP
+					//BALANCES STRIP
 					const _balances = document.createElement("tr");
-					_balances.innerHTML = "<td id='eth_bal'></td><td id='dai_bal'></td><td id='weth_bal'></td>";
+					_balances.innerHTML = "<td id='eth_bal'></td>"; //<td id='dai_bal'></td><td id='weth_bal'></td>*/";
 					App.writeBalances();
-					document.getElementById("balances").append(_balances);*/
+					document.getElementById("balances").append(_balances);
 					//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
 					congress.minimumQuorum().then((quorum) => minimum_quorum = quorum.toNumber());
 			    congress.majorityMargin().then((margin) => majority_margin = margin.toNumber());
@@ -158,7 +149,7 @@ window.App = {
         weiAmount=0;
         jobDescription="change_voting_rules";
 				break;
-			case "ETH_TO_WETH":
+			/*case "ETH_TO_WETH":
 				beneficiary=weth_token_addr; //weth contract
 				weiAmount=ethers.BigNumber.from(10).pow(18).mul(prompt("amount of weth tokens to buy?"));
 				jobDescription="eth_to_weth";
@@ -187,10 +178,10 @@ window.App = {
         beneficiary=weth_token_addr;
         weiAmount=0;
         jobDescription="unlock_weth";
-				break;
+				break;*/
 			default:
 				return;
-    }//console.log(App.get_bytecode(beneficiary, jobDescription));
+    }
 		congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
       //if (err) return err;
       console.log("new proposal initiated");
@@ -200,10 +191,8 @@ window.App = {
 		let filter = congress.filters.LogVoted(proposalID);
 		let voted = congress.queryFilter(filter);
 	  congress.on(voted, (_voted) => {
-	    //if (err) return;
 	    let proposal_elements = document.getElementById(proposalID).getElementsByTagName("td");
 	    congress.proposals(proposalID).then((proposal) => {
-				//if (err) return;
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
 				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
@@ -212,11 +201,10 @@ window.App = {
 		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
 					App.click_event(proposalID, "execute", proposal);
 					//WATCH FOR PROPOSALTALLIED
-					let filter = congress.filters.LogProposalTallied(proposalID);
-			    let proposalTallied = congress.queryFilter(filter, proposal.blockNumber);
-					congress.on(proposalTallied, (proposal) => {
+					let prop_tallied = congress.filters.LogProposalTallied(proposalID);
+			    //let proposalTallied = congress.queryFilter(filter), proposal.blockNumber);
+					congress.on(prop_tallied, (proposal) => {
 						congress.off(proposalTallied, this);
-			      //if (err) return err;
 			      let status;
 			      if (proposal.args.active)  {
 							status="PROPOSAL PASSED!";
@@ -238,22 +226,20 @@ window.App = {
 			case "vote":
 			  document.getElementById(id + "cp").onclick = () => {
 	        congress.checkProposalCode(id, proposal[0], proposal[1], App.get_bytecode(proposal[0], proposal[2])).then((code_checks) => {
-						//if (err) return;
 	          if (code_checks) { //write YES/NO buttons if bytecode checks true
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "true'>YES</button><button id='" + id + "false'>NO</button>";
 				      document.getElementById(id + "true").onclick = () => {
+				        document.getElementById(id + "true").disabled = true;
+				        document.getElementById(id + "false").disabled = true;
 						    congress.vote(id, true, "").then((res) => {
 			            App.watch_for_vote(id);
-				        	document.getElementById(id + "true").disabled = true;
-				        	document.getElementById(id + "false").disabled = true;
 								})
 							}
 							document.getElementById(id + "false").onclick = () => {
+			          document.getElementById(id + "false").disabled = true;
+				        document.getElementById(id + "true").disabled = true;
 						    congress.vote(id, false, "").then((res) => {
-							  	//if (err) return;
 			            App.watch_for_vote(id);
-			          	document.getElementById(id + "false").disabled = true;
-				        	document.getElementById(id + "true").disabled = true;
 								})
 			        }
 	          } else alert("proposal check returned false");
@@ -262,9 +248,11 @@ window.App = {
 				break;
 			case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
-	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then((res) => {
+	        //console.log(congress.estimateGas.executeProposal(id, App.get_bytecode(proposal[0], proposal[2]))) //.then((res) => {
+					//congress.estimateGas.removeMember(account).then((res) => console.log(res)); return;
+	        document.getElementById(id + "ep").disabled = true;
+	        congress.executeProposal(id,App.get_bytecode(proposal[0], proposal[2])).then((res) => {
 	        	console.log(res);
-	        	document.getElementById(id + "ep").disabled = true;
 					})
 	      }
 		}
@@ -273,8 +261,9 @@ window.App = {
 	writeBalances: (addr) => {
 		switch (addr) {
 			case congress_addr:
+				_provider.getBalance(congress_addr).then((eth_balance) => document.getElementById("eth_bal").innerHTML = "ETH: " + eth_balance/1e18); //ethers.BigNumber.from(10).pow(18).toNumber().toFixed(2);
         break;
-			case dai_token_addr:
+			/*case dai_token_addr:
 			  provider.getBalance(congress_addr).then((eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
 				dai.balanceOf(congress_addr).then((dai_bal) => {
 					dai.allowance(congress_addr, matching_market_addr).then((allow) => {
@@ -300,13 +289,11 @@ window.App = {
 					weth.allowance.call(congress_addr, matching_market_addr).then((allow) => {
 						document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
 					})
-        })
-				_provider.getBalance(congress_addr).then((eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
+        })*/
 		}
 	},
   write_proposal: (proposalID) => {
     congress.proposals(proposalID).then((proposal) => {
-      //if (err) return;
       if (proposal[4]) return;
 		  let _proposal = document.createElement("tr");
 		  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>';
@@ -361,7 +348,7 @@ window.App = {
 	//GET BYTECODE
   get_bytecode: (contract_addr, job_description) => {
     switch(contract_addr) {
-			case weth_token_addr:
+			/*case weth_token_addr:
 				switch(job_description) {
 					case  "weth_to_eth":
 						return weth.withdraw.getData(prompt("amount of eth to withraw?")*1e18);
@@ -386,7 +373,7 @@ window.App = {
 						break;
 					default: console.log(job_description);
 				};
-				break;
+				break;*/
       case dai_token_addr:
       	switch(job_description) {
 					case "send_dai":
