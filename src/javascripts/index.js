@@ -183,7 +183,6 @@ window.App = {
 				return;
     }
 		congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
-      //if (err) return err;
       console.log("new proposal initiated");
     })
   },
@@ -191,7 +190,7 @@ window.App = {
 	watch_for_prop_tallied: (proposalID) => {
 		let filter = congress.filters.LogProposalTallied(proposalID);
     let prop_tallied = congress.queryFilter(filter);
-		congress.on(prop_tallied, (proposal) => {"proposal tallied: " + console.log(proposal);
+		congress.on(prop_tallied, (proposal) => {
 			congress.off(prop_tallied);
       let status;
       if (proposal.args.active)  {
@@ -216,7 +215,7 @@ window.App = {
 				if (proposal[7] >= majority_margin)  proposal_elements[5].style.color = "green";
 		  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
 		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
-					App.click_event(proposalID, "execute", proposal);
+					App.set_up_click_event(proposalID, "execute", proposal);
 				} else if (_voted.args[2].toLowerCase() === account.toLowerCase()) {
 					proposal_elements[6].innerHTML = "VOTED!";
 				}
@@ -224,7 +223,7 @@ window.App = {
 		})
 	},
 	//ADD CLICK EVENT
-	click_event: (id, action, proposal) => {
+	set_up_click_event: (id, action, proposal) => {
 		switch (action) {
 			case "vote":
 			  document.getElementById(id + "cp").onclick = () => {
@@ -254,8 +253,6 @@ window.App = {
 			case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
 					App.watch_for_prop_tallied(id)
-	        //console.log(congress.estimateGas.executeProposal(id, App.get_bytecode(proposal[0], proposal[2]))) //.then((res) => {
-					//congress.estimateGas.removeMember(account).then((res) => console.log(res)); return;
 	        document.getElementById(id + "ep").disabled = true;
 	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then((res) => {
 	        	console.log(res);
@@ -321,35 +318,20 @@ window.App = {
 			//IF NEW PROPOSAL WRITE VOTE BUTTON
 			if (Number(proposal[6]) === 0) { //no votes
 		    proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
-				App.click_event(proposalID, "vote", proposal);
+				App.set_up_click_event(proposalID, "vote", proposal);
 			}
 			//IF CONDITIONS ALLOW EXECUTION write execute button
 			else if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
 	      proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
-				App.click_event(proposalID, "execute", proposal);
-				//WATCH FOR PROPOSALTALLIED
-				//let filter = congress.filters.LogProposalTallied(proposalID);
+				App.set_up_click_event(proposalID, "execute", proposal);
 				App.watch_for_prop_tallied(proposalID);
-				/*let prop_tallied = congress.queryFilter("LogProposalTallied", proposal.blockNumber);
-				congress.on(prop_tallied, () => {console.log(proposal.args)
-					congress.off(prop_tallied);
-		      //if (err) return;
-		      let status;
-		      if (proposal.args.active)  {
-						status="PROPOSAL PASSED!";
-						App.writeBalances(proposal[0]);
-					}
-					else  status="PROPOSAL FAILED!";
-		      document.getElementById(proposal.args.proposalID).getElementsByTagName("td")[6].innerHTML = status;
-		      console.log("proposal votes tallied. Proposal ID: " + proposal.args.proposalID);
-		    })*/
 			} else { //SEE IF YOU VOTED
 				let filter = congress.filters.LogVoted(proposalID, null, account);
 				congress.queryFilter(filter, proposal.blockNumber).then((vote) => {
 			    //if (err) return err;
 			    if (vote.length === 0) { //you haven't voted so write vote buttons
 		        proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
-    				App.click_event(proposalID, "vote", proposal);
+    				App.set_up_click_event(proposalID, "vote", proposal);
 		  		} else 	proposal_elements[6].innerHTML = "VOTED!";
 				})
 			}
@@ -420,49 +402,17 @@ window.addEventListener('load', () => {
 	//document.getElementById('connectButton', connect);
 	const provider =  new ethers.providers.Web3Provider(window.ethereum);
 	const signer = provider.getSigner();
-	ethereum
-		.request({ method: 'eth_accounts' })
-		.then((accounts) => {
+	ethereum.request({method:'eth_accounts'}).then((accounts) => {
 		// For now, 'eth_accounts' will continue to always return an array
-		  if (accounts.length === 0) {
-		    // MetaMask is locked or the user has not connected any accounts
-		    console.log('Please connect to MetaMask.');
-		  } else if (accounts[0] !== account) {
-		    account = accounts[0];
-			  App.start(signer); // Initialize your app
-			} else console.log('Please install MetaMask!');
-		})
-		.catch((err) => {
-	    // Some unexpected error.
-	    // For backwards compatibility reasons, if no accounts are available,
-	    // eth_accounts will return an empty array.
-	    console.error(err);
-	  });
-
-	// Note that this event is emitted on page load.
-	// If the array of accounts is non-empty, you're already
-	// connected.
+	  if (accounts.length === 0) {
+	    // MetaMask is locked or the user has not connected any accounts
+	    console.log('Please connect to MetaMask.');
+	  } else if (accounts[0] !== account) {
+	    account = accounts[0];
+		  App.start(signer); // Initialize your app
+		} else console.log('Please install MetaMask!');
+	}).catch((err) => {
+	  console.error(err);
+	});
 	ethereum.on('accountsChanged', (accounts) => {if (accounts[0] !== account) account = accounts[0]});
-	//ethereum.on('chainChanged', () => window.location.reload());
-  /*/ Checking if Web3 has been injected by the browser (Mist/MetaMask)
-  if (window.ethereum) {
-    window.web3 = new Web3(ethereum);
-    try {
-      // Request account access if needed
-      account = (await ethereum.enable())[0];
-			App.start();
-      console.log("using ethereum.enable. Acccounts now exposed");
-    } catch (error) {
-      console.log("access denied" + error);
-    }
-  }
-  window.web3.version.getNetwork((err, netId) => {
-    switch (netId) {
-      case "1":
-        console.log('This is mainnet')
-        break
-      default:
-        console.log('This is an unknown network.')
-    }
-  })*/
 })
