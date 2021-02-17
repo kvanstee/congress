@@ -6,6 +6,7 @@
   <script type="text/javascript" src="./bundle.js"></script>
 </head>
   <body>
+	<button id="connect_button" href="#">CONNECT</button><br>
 	<table>
     <tbody id="balances"></tbody>
 	</table>
@@ -19,19 +20,13 @@
 	</div>
     <div id="content">
       <div id="forMembers" class="hidden">
-        <button onclick="App.new_proposal()" href="#">NEW PROPOSAL</button>
+        <button id="new_proposal" href="#">NEW PROPOSAL</button>
           <select id="proposal_options">
 						<option value="SEND_ETH" selected>SEND ETH</option>
 						<option value="SEND_DAI">SEND DAI</option>
 						<option value="ADD_MEMBER">ADD MEMBER</option>
 						<option value="REMOVE_MEMBER">REMOVE MEMBER</option>
 						<option value="NEW_RULES">CHANGE VOTING RULES</option>
-						<option value="WETH_TO_ETH">WETH TO ETH</option>
-						<option value="ETH_TO_WETH">ETH TO WETH</option>
-						<option value="WETH_TO_DAI">SELL WETH FOR DAI</option>
-						<option value="DAI_TO_WETH">SELL DAI FOR WETH</option>
-						<option value="UNLOCK_TO_SELL_DAI">UNLOCK DAI</option>
-            <option value="UNLOCK_TO_SELL_WETH">UNLOCK WETH</option>
 					</select><br><br>
 	<table>
 	  <tr><th>PROPOSAL NUMBER</th><th>RECIPIENT</th><th>AMOUNT ETH</th><th>JOB DESCRIPTION</th><th>TOTAL VOTES</th><th>PROGRESSIVE VOTE</th><th>STATUS</th></tr>

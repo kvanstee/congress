@@ -1,14 +1,16 @@
 {
   "name": "congress",
+	"sideEffects": ["*.css"],
   "version": "1.0.0",
-  "description": "community land trust",
+  "description": "multi-sig contract interaction",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
     "css-loader": "^2.1.1",
-    "webpack": "^4.33.0"
+    "ethers": "^5.0.28",
+    "style-loader": "^2.0.0"
   },
   "devDependencies": {
     "webpack-cli": "^3.2.1"
