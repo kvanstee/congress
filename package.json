@@ -1,5 +1,6 @@
 {
   "name": "congress",
+	"sideEffects": ["*.css"],
   "version": "1.0.0",
   "description": "multi-sig contract interaction",
   "main": "index.js",
