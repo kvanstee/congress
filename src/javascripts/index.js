@@ -1,13 +1,13 @@
 import { Contract, BigNumber, utils, providers } from 'ethers';
 require('../stylesheets/app.css');
 //ADDRESSES
-//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-const congress_addr = '0xB9aD58717DcCCa67093be988c4E337b63780Ea24'; //ganache testnet
+const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+//const congress_addr = '0xB9aD58717DcCCa67093be988c4E337b63780Ea24'; //ganache testnet
 //const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
 //const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 //const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
-//const startBlock = 10215507; //MAINNET
-const startBlock = 0; //ganache testnet
+const startBlock = 10215507; //MAINNET
+//const startBlock = 0; //ganache testnet
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 //const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
@@ -169,7 +169,7 @@ window.App = {
 								return;
 				    }
 						congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
-							document.getElementById('new_proposal').disabled = 'false';
+							document.getElementById('new_proposal').disabled = false;
 				      console.log("new proposal initiated");
 				    })
 				  }
