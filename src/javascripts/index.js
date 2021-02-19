@@ -2,8 +2,9 @@ import { Contract, BigNumber, utils, providers } from 'ethers';
 require('../stylesheets/app.css');
 //ADDRESSES
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0xB9aD58717DcCCa67093be988c4E337b63780Ea24'; //ganache testnet
-//const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
+//const congress_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
+const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
+//const dai_token_addr = '0xB9aD58717DcCCa67093be988c4E337b63780Ea24'; //ganache testnet
 //const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 //const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 const startBlock = 10215507; //MAINNET
@@ -11,7 +12,8 @@ const startBlock = 10215507; //MAINNET
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 //const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
-const ERC20_token_abi = require('../../build/abis/ERC20_abi.json');
+const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
+//const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
 
 let account = null;
 let congress;
@@ -38,15 +40,16 @@ window.App = {
 					})
 					break;
 				case "DAI":
-					//dai = web3.eth.contract(ERC20_token_abi).at(dai_token_addr);
 					dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
-		      dai.approveAndCall(congress_addr, donation, "0x").then(( res) => {
+		      dai.approveAndCall(congress_addr, donation, "0x").then(( res) => { //MAINNET
+		      //dai.transfer(congress_addr, donation).then(( res) => { //ganache testnet
 		        console.log("dai donation initiated, value = " + donation + "DAI");
 		      })
 				default:
 					return;
 	    }
 		}
+		dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
 		congress = new Contract(congress_addr, congress_abi, _provider);
 		congress.removeAllListeners();
 		//DONATION RECEIPTS
@@ -54,10 +57,10 @@ window.App = {
 			document.getElementById("donate").disabled = false;
 			App.writeBalances(congress_addr)
     })
-    congress.on("LogReceivedTokens", (a,b,addr) => {
+    congress.on("LogReceivedTokens", (a,b,addr) => {console.log(a,b,addr)
 			if (addr.toLowerCase() !== dai_token_addr.toLowerCase()) return;
 			document.getElementById("donate").disabled = false;
-			//App.writeBalances(dai_token_addr);
+			App.writeBalances(dai_token_addr);
     })
     congress.members(account).then((res) => {
 			switch (res[0]) { //ARE YOU  A MEMBER?
@@ -71,8 +74,8 @@ window.App = {
 					document.getElementById("forMembers").className = 'shown';
 					//BALANCES STRIP
 					const _balances = document.createElement("tr");
-					_balances.innerHTML = "<td id='eth_bal'></td>"; //<td id='dai_bal'></td><td id='weth_bal'></td>*/";
-					App.writeBalances();
+					_balances.innerHTML = "<td id='eth_bal'></td><td id='dai_bal'></td>" //<td id='weth_bal'></td>*/";
+					App.writeBalances([congress_addr,dai_token_addr]);
 					document.getElementById("balances").append(_balances);
 					//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
 					congress.minimumQuorum().then((quorum) => minimum_quorum = quorum.toNumber());
@@ -169,8 +172,8 @@ window.App = {
 								return;
 				    }
 						congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
-							document.getElementById('new_proposal').disabled = false;
 				      console.log("new proposal initiated");
+							document.getElementById('new_proposal').disabled = false;
 				    })
 				  }
 			}
@@ -181,10 +184,10 @@ window.App = {
 	//WATCH FOR PROPOSALTALLIED
 	watch_for_prop_tallied: (proposalID) => {
 		let filter = congress.filters.LogProposalTallied(proposalID);
-		congress.on(filter, (id,res,num_votes,active) => {
+		congress.once(filter, (id,res,num_votes,active) => {
 			if (!active) return;
-			App.writeBalances();
-      document.getElementById(proposalID).getElementsByTagName("td")[6].innerHTML = "PROPOSAL EXECUTED!";
+			App.writeBalances([congress_addr, dai_token_addr]);
+      document.getElementById(proposalID).getElementsByTagName("td")[6].innerHTML = "EXECUTED!";
     });
 	},
 	//WATCH FOR VOTE
@@ -239,41 +242,45 @@ window.App = {
 		}
 	},
 	//WRITE BALANCES
-	writeBalances: (addr) => {
-		switch (addr) {
-			/*case congress_addr:
-				_provider.getBalance(congress_addr).then((eth_balance) => document.getElementById("eth_bal").innerHTML = "ETH: " + eth_balance/1e18); //ethers.BigNumber.from(10).pow(18).toNumber().toFixed(2);
-        break;
-			case dai_token_addr:
-			  _provider.getBalance(congress_addr).then((eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
-				dai.balanceOf(congress_addr).then((dai_bal) => {
-					dai.allowance(congress_addr, matching_market_addr).then((allow) => {
-						document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0); //+ " (" + (allow/1e18).toFixed(0) + ")";
-          })
-        })
-		    break;
-			/*case weth_token_addr:
-			  _provider.getBalance(congress_addr).then((eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
-				weth.balanceOf(congress_addr).then((weth_bal) => {
-					weth.allowance(congress_addr, matching_market_addr).then((allow) => {
-						document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
+	writeBalances: (addrs) => {
+		for (let addr of addrs) { 
+			switch (addr) {
+				case congress_addr:
+					ethereum.request({method:"eth_getBalance", params:[congress_addr]}).then((bal) => {
+						document.getElementById("eth_bal").innerHTML = "ETH: " + (bal/1e18).toFixed(2);
 					})
-        })
-				break;*/
-      default:
-				ethereum.request({method:"eth_getBalance", params:[congress_addr]}).then((bal) => {
-					document.getElementById("eth_bal").innerHTML = "ETH: " + (bal/1e18).toFixed(2);
-				/*dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
-				dai.balanceOf(congress_addr).then((dai_bal) => {
-					dai.allowance(congress_addr, matching_market_addr).then((allow) => {
-						document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0); // + " (" + (allow/1e18).toFixed(0) + ")";
+	        break;
+				case dai_token_addr:
+					dai.balanceOf(congress_addr).then((dai_bal) => {
+						//dai.allowance(congress_addr, matching_market_addr).then((allow) => {
+							document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0); //+ " (" + (allow/1e18).toFixed(0) + ")";
+	          //})
+	        })
+			    break;
+				/*case weth_token_addr:
+				  _provider.getBalance(congress_addr).then((eth_bal) => document.getElementById("eth_bal").innerHTML = "ETH: " + (eth_bal/1e18).toFixed(2));
+					weth.balanceOf(congress_addr).then((weth_bal) => {
+						weth.allowance(congress_addr, matching_market_addr).then((allow) => {
+							document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
+						})
+	        })
+					break;*/
+	      default:
+					/*ethereum.request({method:"eth_getBalance", params:[congress_addr]}).then((bal) => {
+						document.getElementById("eth_bal").innerHTML = "ETH: " + (bal/1e18).toFixed(2);
+					dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
+					dai.balanceOf(congress_addr).then((dai_bal) => {
+						dai.allowance(congress_addr, matching_market_addr).then((allow) => {
+							document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0); // + " (" + (allow/1e18).toFixed(0) + ")";
+						})
 					})
-				})
-				weth.balanceOf(congress_addr).then((weth_bal) => {
-					weth.allowance.call(congress_addr, matching_market_addr).then((allow) => {
-						document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
-					})*/
-        })
+					weth.balanceOf(congress_addr).then((weth_bal) => {
+						weth.allowance.call(congress_addr, matching_market_addr).then((allow) => {
+							document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
+						})
+	        })*/
+					return;
+			}
 		}
 	},
   write_proposal: (proposalID) => {
@@ -344,18 +351,19 @@ window.App = {
 						break;
 					default: console.log(job_description);
 				};
-				break;
+				break;*/
       case dai_token_addr:
+				let ERC20_token_iface = new utils.Interface(ERC20_token_abi);
       	switch(job_description) {
 					case "send_dai":
-      			return dai.transfer.getData(prompt("dai recipient?"), prompt("amount $dai?")*1e18);
+						return ERC20_token_iface.encodeFunctionData("transfer", [prompt("address to?"), BigNumber.from(10).pow(18).mul(prompt("dai value?"))]);
       			break;
-					case "unlock_dai":
+					/*case "unlock_dai":
 						return dai.approve.getData(matching_market_addr, prompt("amount $dai for instant trade?")*1e18);
-						break;
+						break;*/
 					default: console.log(job_description);
 				};
-				break;*/
+				break;
       case congress_addr:
 				let congr_iface = new utils.Interface(congress_abi);
         switch(job_description) {
