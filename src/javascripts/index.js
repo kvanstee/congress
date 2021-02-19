@@ -2,9 +2,9 @@ import { Contract, BigNumber, utils, providers } from 'ethers';
 require('../stylesheets/app.css');
 //ADDRESSES
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
+//const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
 const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
-//const dai_token_addr = '0xB9aD58717DcCCa67093be988c4E337b63780Ea24'; //ganache testnet
+//const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
 //const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 //const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 const startBlock = 10215507; //MAINNET
@@ -30,6 +30,7 @@ window.App = {
 			document.getElementById("donate_button").className = 'hidden';
 			document.getElementById("donate_div").className = 'shown';
 		}
+		dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
 		document.getElementById("donate").onclick = () => {
 			document.getElementById("donate").disabled = true;
     	let donation = BigNumber.from(10).pow(18).mul(document.getElementById("donation").value);
@@ -40,7 +41,6 @@ window.App = {
 					})
 					break;
 				case "DAI":
-					dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
 		      dai.approveAndCall(congress_addr, donation, "0x").then(( res) => { //MAINNET
 		      //dai.transfer(congress_addr, donation).then(( res) => { //ganache testnet
 		        console.log("dai donation initiated, value = " + donation + "DAI");
@@ -49,7 +49,6 @@ window.App = {
 					return;
 	    }
 		}
-		dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
 		congress = new Contract(congress_addr, congress_abi, _provider);
 		congress.removeAllListeners();
 		//DONATION RECEIPTS
@@ -57,7 +56,7 @@ window.App = {
 			document.getElementById("donate").disabled = false;
 			App.writeBalances(congress_addr)
     })
-    congress.on("LogReceivedTokens", (a,b,addr) => {console.log(a,b,addr)
+    congress.on("LogReceivedTokens", (a,b,addr) => {
 			if (addr.toLowerCase() !== dai_token_addr.toLowerCase()) return;
 			document.getElementById("donate").disabled = false;
 			App.writeBalances(dai_token_addr);
@@ -199,10 +198,14 @@ window.App = {
 				proposal_elements[4].innerHTML = proposal[6]; //number of votes
 				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
 				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
-				if (proposal[7] >= majority_margin)  proposal_elements[5].style.color = "green";
+				if (proposal[7] >= majority_margin) {
+					proposal_elements[5].style.color = "green";
+					App.watch_for_prop_tallied(proposalID);
+				}
 		  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
 		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
 					App.set_up_click_event(id, "execute", proposal);
+					congress.off(filter);
 				} else if (voter.toLowerCase() === account.toLowerCase()) {
 					proposal_elements[6].innerHTML = "VOTED!";
 				}
@@ -219,7 +222,6 @@ window.App = {
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "true'>YES</button><button id='" + id + "false'>NO</button>";
 							for (const vote of ["true", "false"]) {
 					      document.getElementById(id + vote).onclick = () => {
-				          App.watch_for_vote(id);
 					        document.getElementById(id + "true").disabled = true;
 					        document.getElementById(id + "false").disabled = true;
 							    congress.vote(id, vote, "").then((res) => {
@@ -233,17 +235,16 @@ window.App = {
 				break;
 			case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
-					App.watch_for_prop_tallied(id)
 	        document.getElementById(id + "ep").disabled = true;
 	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then((res) => {
-	        	console.log(res);
+	        	console.log("proposal being executed!");
 					})
 	      }
 		}
 	},
 	//WRITE BALANCES
 	writeBalances: (addrs) => {
-		for (let addr of addrs) { 
+		for (let addr of addrs) {
 			switch (addr) {
 				case congress_addr:
 					ethereum.request({method:"eth_getBalance", params:[congress_addr]}).then((bal) => {
@@ -301,25 +302,22 @@ window.App = {
 		  document.getElementById("activeProposals").append(_proposal);
 		  (Number(proposal[6]) >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 		  (Number(proposal[7]) >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
-			//IF NEW PROPOSAL WRITE VOTE BUTTON
-			if (Number(proposal[6]) === 0) { //no votes
-		    proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
-				App.set_up_click_event(proposalID, "vote", proposal);
-			}
-			//IF CONDITIONS ALLOW EXECUTION write execute button
-			else if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
-	      proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
-				App.set_up_click_event(proposalID, "execute", proposal);
-				//App.watch_for_prop_tallied(proposalID);
-			} else { //SEE IF YOU VOTED
+			if (Number(proposal[6]) < minimum_quorum) { //less than quorum
+				App.watch_for_vote(proposalID);
+				//SEE IF YOU VOTED
 				let filter = congress.filters.LogVoted(proposalID, null, account);
 				congress.queryFilter(filter, proposal.blockNumber).then((vote) => {
-			    //if (err) return err;
 			    if (vote.length === 0) { //you haven't voted so write vote buttons
 		        proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
     				App.set_up_click_event(proposalID, "vote", proposal);
 		  		} else 	proposal_elements[6].innerHTML = "VOTED!";
 				})
+			}
+			//IF CONDITIONS ALLOW EXECUTION write execute button
+			else if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
+				App.watch_for_prop_tallied(proposalID);
+	      proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
+				App.set_up_click_event(proposalID, "execute", proposal);
 			}
 		})
 	},
