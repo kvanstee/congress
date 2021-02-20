@@ -1,19 +1,19 @@
-import { Contract, BigNumber, utils, providers } from 'ethers';
+//import { Contract, BigNumber, utils, providers } from 'ethers';
 require('../stylesheets/app.css');
 //ADDRESSES
-const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
-const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
-//const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
+//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
+//const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
+const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
 //const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 //const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
-const startBlock = 10215507; //MAINNET
-//const startBlock = 0; //ganache testnet
+//const startBlock = 10215507; //MAINNET
+const startBlock = 0; //ganache testnet
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 //const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
-const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
-//const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
+//const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
+const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
 
 let account = null;
 let congress;
@@ -22,6 +22,7 @@ let dai;
 //let matching_market;
 //let members = [];
 let minimum_quorum, majority_margin;
+let writable = false;
 
 window.App = {
   start: async (_provider) => {
@@ -30,6 +31,7 @@ window.App = {
 			document.getElementById("donate_button").className = 'hidden';
 			document.getElementById("donate_div").className = 'shown';
 		}
+		let {Contract, BigNumber} = await import('ethers');
 		dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
 		document.getElementById("donate").onclick = () => {
 			document.getElementById("donate").disabled = true;
@@ -309,7 +311,8 @@ window.App = {
 				congress.queryFilter(filter, proposal.blockNumber).then((vote) => {
 			    if (vote.length === 0) { //you haven't voted so write vote buttons
 		        proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
-    				App.set_up_click_event(proposalID, "vote", proposal);
+    				if (writable) App.set_up_click_event(proposalID, "vote", proposal);
+						else document.getElementById(proposalID + "cp").disabled = true;
 		  		} else 	proposal_elements[6].innerHTML = "VOTED!";
 				})
 			}
@@ -317,12 +320,14 @@ window.App = {
 			else if (Number(proposal[6]) >= minimum_quorum && Number(proposal[7]) >= majority_margin && Date.now() > proposal[3]*1e3) {
 				App.watch_for_prop_tallied(proposalID);
 	      proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
-				App.set_up_click_event(proposalID, "execute", proposal);
+				if (writable) App.set_up_click_event(proposalID, "execute", proposal);
+				else document.getElementById(proposalID + "ep").disabled = true;
 			}
 		})
 	},
 	//GET BYTECODE
-  get_bytecode: (contract_addr, job_description) => {
+  get_bytecode: async (contract_addr, job_description) => {
+		let {utils} = await import('ethers');
     switch(contract_addr) {
 			/*case weth_token_addr:
 				switch(job_description) {
@@ -384,22 +389,32 @@ window.App = {
   },
 },
 window.addEventListener('load', () => {
-	const provider =  new providers.Web3Provider(window.ethereum);
-	const signer = provider.getSigner();
-	document.getElementById('connect_button').onclick = () => {
+	document.getElementById('connect_button').onclick = async () => {
 		document.getElementById('connect_button').className = 'hidden';
-		ethereum.request({method:'eth_requestAccounts'}).then((accounts) => {
-			// For now, 'eth_accounts' will continue to always return an array
-		  if (accounts.length == 0) {
-		    // MetaMask is locked or the user has not connected any accounts
-		    console.log('Please connect to MetaMask.');
-		  } else if (accounts[0] !== account) {
-		    account = accounts[0];
-			  App.start(signer); // Initialize your app
-			} else console.log('Please install MetaMask!');
-		}).catch((err) => {
-		  console.error(err);
-		});
+		document.getElementById('read_write').className = 'shown';
+		document.getElementById('read_write').onclick = () => writable = true;
+		let {providers}  = await import('ethers');
+		const provider =  new providers.Web3Provider(window.ethereum);
+		const signer = provider.getSigner();
+		setTimeout(() => {
+			document.getElementById('read_write').className = 'hidden';
+			ethereum.request({method:'eth_requestAccounts'}).then((accounts) => {
+				// For now, 'eth_accounts' will continue to always return an array
+			  if (accounts.length == 0) {
+			    // MetaMask is locked or the user has not connected any accounts
+			    console.log('Please connect to MetaMask.');
+			  } else if (accounts[0] !== account) {
+			    account = accounts[0];
+					if (writable) App.start(signer); // Initialize your app
+					else {
+						App.start(provider);
+						document.getElementById('new_proposal').disabled = true;
+					}
+				} else console.log('Please install MetaMask!');
+			}).catch((err) => {
+			  console.error(err);
+			})
+		},2000);
 		//ethereum.on('accountsChanged', (accounts) => {if (accounts[0] !== account) account = accounts[0]});
 	}
 })
