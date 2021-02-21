@@ -383,7 +383,6 @@ window.addEventListener('load', () => {
 		}
 		let {providers}  = await import('ethers');
 		const provider =  new providers.Web3Provider(window.ethereum);
-		const signer = provider.getSigner();
 		setTimeout(() => {
 			document.getElementById('read_write').className = 'hidden';
 			ethereum.request({method:'eth_requestAccounts'}).then((accounts) => {
@@ -391,10 +390,13 @@ window.addEventListener('load', () => {
 			    alert('Please connect to MetaMask');
 			  } else if (accounts[0] !== account) {
 			    account = accounts[0];
-					if (writable) App.start(signer); //Initialize app rw
-					else {
-						App.start(provider); //Initialize app ro
+					if (!writable) {
 						document.getElementById('new_proposal').disabled = true;
+						App.start(provider); //Initialize app ro
+					}
+					else if (writable) {
+						const signer = provider.getSigner();
+						App.start(signer); //Initialize app rw
 					}
 				} else console.log('Please install MetaMask!');
 			}).catch((err) => {
