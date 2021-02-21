@@ -5,8 +5,8 @@ const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 //const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
 const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
 //const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
-const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
-const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
+//const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+//const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
 const startBlock = 10215507; //MAINNET
 //const startBlock = 0; //ganache testnet
 //ABIs
@@ -44,7 +44,7 @@ window.App = {
 					break;
 				case "DAI":
 		      dai.approveAndCall(congress_addr, donation, "0x").then(( res) => { //MAINNET
-//		      dai.transfer(congress_addr, donation).then(( res) => { //ganache testnet
+		      //dai.transfer(congress_addr, donation).then(( res) => { //ganache testnet
 		        console.log("dai donation initiated, value = " + donation + "DAI");
 		      })
 				default:
