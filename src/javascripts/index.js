@@ -1,19 +1,19 @@
 //import { Contract, BigNumber, utils, providers } from 'ethers';
 require('../stylesheets/app.css');
 //ADDRESSES
-//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
-//const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
-const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
-//const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
-//const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
-//const startBlock = 10215507; //MAINNET
-const startBlock = 0; //ganache testnet
+const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+//const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
+const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
+//const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
+const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
+const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
+const startBlock = 10215507; //MAINNET
+//const startBlock = 0; //ganache testnet
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 //const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
-//const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
-const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
+const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
+//const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
 
 let account = null;
 let congress;
@@ -44,7 +44,7 @@ window.App = {
 					break;
 				case "DAI":
 		      dai.approveAndCall(congress_addr, donation, "0x").then(( res) => { //MAINNET
-		      //dai.transfer(congress_addr, donation).then(( res) => { //ganache testnet
+//		      dai.transfer(congress_addr, donation).then(( res) => { //ganache testnet
 		        console.log("dai donation initiated, value = " + donation + "DAI");
 		      })
 				default:
@@ -269,19 +269,6 @@ window.App = {
 	        })
 					break;*/
 	      default:
-					/*ethereum.request({method:"eth_getBalance", params:[congress_addr]}).then((bal) => {
-						document.getElementById("eth_bal").innerHTML = "ETH: " + (bal/1e18).toFixed(2);
-					dai = new Contract(dai_token_addr, ERC20_token_abi, _provider);
-					dai.balanceOf(congress_addr).then((dai_bal) => {
-						dai.allowance(congress_addr, matching_market_addr).then((allow) => {
-							document.getElementById("dai_bal").innerHTML = "DAI: " + (dai_bal/1e18).toFixed(0); // + " (" + (allow/1e18).toFixed(0) + ")";
-						})
-					})
-					weth.balanceOf(congress_addr).then((weth_bal) => {
-						weth.allowance.call(congress_addr, matching_market_addr).then((allow) => {
-							document.getElementById("weth_bal").innerHTML = "WETH: " + (weth_bal/1e18).toFixed(2) + " (" + (allow/1e18).toFixed(2) + ")";
-						})
-	        })*/
 					return;
 			}
 		}
@@ -371,15 +358,12 @@ window.App = {
 				let congr_iface = new utils.Interface(congress_abi);
         switch(job_description) {
           case "change_voting_rules":
-            //return congress.changeVotingRules.getData(prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?"));
 						return congr_iface.encodeFunctionData("changeVotingRules", [prompt("new minimum quorum?"), prompt("new minutes for debate?"), prompt("new majority margin?")]);
 	    			break;
           case "add_member":
-            // return congress.addMember.getData(prompt("new member address?"), prompt("name of new member?"));
 						return congr_iface.encodeFunctionData("addMember", [prompt("new member address?"), prompt("name of new member?")]);
 	    			break;
           case "remove_member":
-            //return congress.removeMember.getData(prompt("address of member to be removed?"));
 						return congr_iface.encodeFunctionData("removeMember", [prompt("address of member to be removed?")]);
         };
 				break;
@@ -392,22 +376,24 @@ window.addEventListener('load', () => {
 	document.getElementById('connect_button').onclick = async () => {
 		document.getElementById('connect_button').className = 'hidden';
 		document.getElementById('read_write').className = 'shown';
-		document.getElementById('read_write').onclick = () => writable = true;
+		document.getElementById('read_write').onclick = () => {
+			writable = true;
+			document.getElementById('read_write').className = 'hidden';
+			document.getElementById('new_proposal').disabled = false;
+		}
 		let {providers}  = await import('ethers');
 		const provider =  new providers.Web3Provider(window.ethereum);
 		const signer = provider.getSigner();
 		setTimeout(() => {
 			document.getElementById('read_write').className = 'hidden';
 			ethereum.request({method:'eth_requestAccounts'}).then((accounts) => {
-				// For now, 'eth_accounts' will continue to always return an array
 			  if (accounts.length == 0) {
-			    // MetaMask is locked or the user has not connected any accounts
-			    console.log('Please connect to MetaMask.');
+			    alert('Please connect to MetaMask');
 			  } else if (accounts[0] !== account) {
 			    account = accounts[0];
-					if (writable) App.start(signer); // Initialize your app
+					if (writable) App.start(signer); //Initialize app rw
 					else {
-						App.start(provider);
+						App.start(provider); //Initialize app ro
 						document.getElementById('new_proposal').disabled = true;
 					}
 				} else console.log('Please install MetaMask!');
@@ -415,6 +401,5 @@ window.addEventListener('load', () => {
 			  console.error(err);
 			})
 		},2000);
-		//ethereum.on('accountsChanged', (accounts) => {if (accounts[0] !== account) account = accounts[0]});
 	}
 })
