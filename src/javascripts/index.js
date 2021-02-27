@@ -1,4 +1,3 @@
-//import { Contract, BigNumber, utils, providers } from 'ethers';
 require('../stylesheets/app.css');
 //ADDRESSES
 const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
