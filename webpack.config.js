@@ -16,8 +16,8 @@ module.exports = [
       index: './src/javascripts/index.js',
     },
     plugins: [
-      new webpack.optimize.OccurrenceOrderPlugin(),
-      /*new WebpackMonitor({
+      /*new webpack.optimize.OccurrenceOrderPlugin(),
+      new WebpackMonitor({
         capture: true,
         launch: true,
       }),*/
@@ -35,7 +35,7 @@ module.exports = [
         ]
       }]
     },
-    mode: 'production'
+    mode: 'development'
   }
 ]
 
