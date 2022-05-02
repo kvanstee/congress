@@ -1,8 +1,8 @@
-//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
+const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+//const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
 //const startBlock = 10215507; //MAINNET
-const startBlock = 0; //ganache testnet
-let congress_abi=[{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"proposals","outputs":[{"name":"recipient","type":"address"},{"name":"amount","type":"uint256"},{"name":"description","type":"string"},{"name":"minExecutionDate","type":"uint256"},{"name":"executed","type":"bool"},{"name":"proposalPassed","type":"bool"},{"name":"numberOfVotes","type":"uint256"},{"name":"currentResult","type":"int256"},{"name":"proposalHash","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"members","outputs":[{"name":"isMember","type":"bool"},{"name":"name","type":"string"},{"name":"memberSince","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"debatingPeriodInMinutes","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"minimumQuorum","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"majorityMargin","outputs":[{"name":"","type":"int256"}],"payable":false,"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"recipient","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"description","type":"string"},{"indexed":false,"name":"numProposals","type":"uint256"}],"name":"LogProposalAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"position","type":"bool"},{"indexed":true,"name":"voter","type":"address"},{"indexed":false,"name":"justification","type":"string"}],"name":"LogVoted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"result","type":"int256"},{"indexed":false,"name":"quorum","type":"uint256"},{"indexed":true,"name":"active","type":"bool"}],"name":"LogProposalTallied","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newMinimumQuorum","type":"uint256"},{"indexed":false,"name":"newDebatingPeriodInMinutes","type":"uint256"},{"indexed":false,"name":"newMajorityMargin","type":"int256"}],"name":"LogChangeOfRules","type":"event"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"},{"name":"memberName","type":"string"}],"name":"addMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"}],"name":"removeMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"minimumQuorumForProposals","type":"uint256"},{"name":"minutesForDebate","type":"uint256"},{"name":"marginOfVotesForMajority","type":"int256"}],"name":"changeVotingRules","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"jobDescription","type":"string"},{"name":"transactionBytecode","type":"bytes"}],"name":"newProposal","outputs":[{"name":"proposalID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"checkProposalCode","outputs":[{"name":"codeChecksOut","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"supportsProposal","type":"bool"},{"name":"justificationText","type":"string"}],"name":"vote","outputs":[{"name":"voteID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"executeProposal","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}]
+const startBlock = 14e6; //ganache testnet
+let congress_abi=[{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"proposals","outputs":[{"name":"recipient","type":"address"},{"name":"amount","type":"uint256"},{"name":"description","type":"string"},{"name":"minExecutionDate","type":"uint256"},{"name":"executed","type":"bool"},{"name":"proposalPassed","type":"bool"},{"name":"numberOfVotes","type":"uint256"},{"name":"currentResult","type":"int256"},{"name":"proposalHash","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"members","outputs":[{"name":"isMember","type":"bool"},{"name":"name","type":"string"},{"name":"memberSince","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"debatingPeriodInMinutes","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"minimumQuorum","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"majorityMargin","outputs":[{"name":"","type":"int256"}],"payable":false,"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"ID","type":"uint256"},{"indexed":false,"name":"recipient","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"description","type":"string"},{"indexed":false,"name":"numProposals","type":"uint256"}],"name":"LogProposalAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"position","type":"bool"},{"indexed":true,"name":"voter","type":"address"},{"indexed":false,"name":"justification","type":"string"}],"name":"LogVoted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"result","type":"int256"},{"indexed":false,"name":"quorum","type":"uint256"},{"indexed":true,"name":"active","type":"bool"}],"name":"LogProposalTallied","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newMinimumQuorum","type":"uint256"},{"indexed":false,"name":"newDebatingPeriodInMinutes","type":"uint256"},{"indexed":false,"name":"newMajorityMargin","type":"int256"}],"name":"LogChangeOfRules","type":"event"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"},{"name":"memberName","type":"string"}],"name":"addMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"}],"name":"removeMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"minimumQuorumForProposals","type":"uint256"},{"name":"minutesForDebate","type":"uint256"},{"name":"marginOfVotesForMajority","type":"int256"}],"name":"changeVotingRules","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"jobDescription","type":"string"},{"name":"transactionBytecode","type":"bytes"}],"name":"newProposal","outputs":[{"name":"proposalID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"checkProposalCode","outputs":[{"name":"codeChecksOut","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"supportsProposal","type":"bool"},{"name":"justificationText","type":"string"}],"name":"vote","outputs":[{"name":"voteID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"executeProposal","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}];
 let account = null;
 let congress;
 let minimum_quorum, majority_margin;
@@ -25,7 +25,7 @@ export default window.App = {
 			//WRITE PREVIOUS PROPOSALS
 			congress.queryFilter('LogProposalAdded', startBlock).then(proposals => {
 				for (let proposal of proposals) {
-					let ID = Number(proposal.args.proposalID);
+					let ID = Number(proposal.args.ID);
           let filter = congress.filters.LogProposalTallied(ID);
 					congress.queryFilter(filter ,proposal.blockNumber, 'latest').then(prop_tallied => {
 						if (prop_tallied.length !== 0) return;
@@ -37,8 +37,8 @@ export default window.App = {
 				}
 			})
 			//WATCH FOR AND WRITE NEW PROPOSAL
-			congress.on('LogProposalAdded', (proposalID) => {
-				let id = Number(proposalID)
+			congress.on('LogProposalAdded', (ID) => {
+				let id = Number(ID);
 				if (!Ids.has(id))	{
 					Ids.add(id);
 					App.write_proposal(id);
@@ -46,8 +46,8 @@ export default window.App = {
 			})
 			// WATCH FOR CHANGE OF RULES
 	    congress.on('LogChangeOfRules', (min_quorum, maj_margin) => {
-				minimum_quorum = min_quorum.toNumber();
-				majority_margin = maj_margin.toNumber();
+				minimum_quorum = Number(min_quorum);
+				majority_margin = Number(maj_margin);
 	    })
 			//NEW PROPOSAL ONCLICK
 			document.getElementById("new_proposal").onclick = async () => {
@@ -60,7 +60,7 @@ export default window.App = {
 			  switch (proposal) {
 			    case "SEND_ETH":
 						let { BigNumber } = await import('ethers');
-			      beneficiary = account; //prompt("address beneficiary?");
+			      beneficiary = prompt("address beneficiary?",account);
 			      weiAmount = BigNumber.from(10).pow(18).mul(prompt("amount ether?"));
 			      jobDescription = prompt("job description?");
 			      break;
@@ -82,8 +82,8 @@ export default window.App = {
 					default:
 			      return;
 			  }
-			  congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then((res) => {
-			    console.log("new proposal initiated");
+			  congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
+			    //console.log("new proposal initiated");
 			    document.getElementById('new_proposal').disabled = false;
 			  })
 			}
@@ -97,12 +97,14 @@ export default window.App = {
 	  congress.on(filter, (id, vote, voter) => {
 	    let proposal_elements = document.getElementById(ID).getElementsByTagName("td");
 	    congress.proposals(id).then(proposal => {
-				proposal_elements[4].innerHTML = proposal[6]; //number of votes
-				proposal_elements[5].innerHTML = proposal[7];  //cumulative vote
-				if (proposal[6] >= minimum_quorum) proposal_elements[4].style.color = "green";
-				if (proposal[7] >= majority_margin) proposal_elements[5].style.color = "green";
-		  	if (proposal[6] >= minimum_quorum && proposal[7] >= majority_margin && Date.now()/1e3 > proposal[3]) {
-		  	  proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
+				let num_votes = Number(proposal[6]);
+				let cum_vote = Number(proposal[7]);
+				proposal_elements[4].innerHTML = num_votes; //number of votes
+				proposal_elements[5].innerHTML = cum_vote;  //cumulative vote
+				if (num_votes >= minimum_quorum) proposal_elements[4].style.color = "green";
+				if (cum_vote >= majority_margin) proposal_elements[5].style.color = "green";
+		  	if (num_votes >= minimum_quorum && cum_vote >= majority_margin && Date.now()/1e3 > proposal[3]) {
+		  	  proposal_elements[6].innerHTML = "<button id='" + ID + "ep'>EXECUTE</button>";
 					App.set_up_click_event(id, "execute", proposal);
 					App.watch_for_prop_tallied(ID);
 					congress.off(filter);
@@ -117,45 +119,46 @@ export default window.App = {
 		let filter = congress.filters.LogProposalTallied(ID)
 		congress.once(filter, (id,res,num_votes,active) => {
 			if (!active) return
-      document.getElementById(proposalID).getElementsByTagName("td")[6].innerHTML = "EXECUTED!"
+      document.getElementById(ID).getElementsByTagName("td")[6].innerHTML = "EXECUTED!"
     })
 	},
 	//WRITE PROPOSAL
-  write_proposal: (proposalID) => {
-    congress.proposals(proposalID).then(proposal => {
-      if (proposal[4]) return
-		  let _proposal = document.createElement("tr")
-		  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>'
-		  _proposal.id = proposalID
-		  let proposal_elements = _proposal.getElementsByTagName('td')
+  write_proposal: (ID) => {
+    congress.proposals(ID).then(proposal => {
+      if (proposal[4]) return;
+		  let _proposal = document.createElement("tr");
+		  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>';
+		  _proposal.id = ID;
+		  let proposal_elements = _proposal.getElementsByTagName('td');
 		  //WRITE TABLE ROW (PROPOSAL)
-	    proposal_elements[0].innerHTML = _proposal.id
-	    proposal_elements[1].innerHTML = proposal[0] //recipient
-	    proposal_elements[2].innerHTML = proposal[1]/1e18 //amount
-	    proposal_elements[3].innerHTML = proposal[2] //description
-	    proposal_elements[4].innerHTML = Number(proposal[6]) //number votes
-	    proposal_elements[5].innerHTML = Number(proposal[7]) //progressive vote
-			//APPEND THE PROPOSAL; COLOUR COUNTS
+			let num_votes = Number(proposal[6]);
+			let cum_vote = Number(proposal[7]);
+	    proposal_elements[0].innerHTML = _proposal.id;
+	    proposal_elements[1].innerHTML = proposal[0]; //recipient
+	    proposal_elements[2].innerHTML = Number(proposal[1])/1e18; //amount
+	    proposal_elements[3].innerHTML = proposal[2]; //description
+	    proposal_elements[4].innerHTML = num_votes;
+	    proposal_elements[5].innerHTML = cum_vote;
+			//APPEND THE PROPOSAL
 		  document.getElementById("activeProposals").append(_proposal);
-		  (Number(proposal[6]) >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
-		  (Number(proposal[7]) >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
-			if (Number(proposal[6]) < minimum_quorum || Number(proposal[7]) < majority_margin) {
-				App.watch_for_vote(proposalID)
+			//colour vote counts
+		  (num_votes >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
+		  (cum_vote >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
+			if (num_votes < minimum_quorum || cum_vote < majority_margin) {
+				App.watch_for_vote(ID)
 				//SEE IF YOU VOTED
-				let filter = congress.filters.LogVoted(proposalID, null, account); //indexed variables
+				let filter = congress.filters.LogVoted(ID, null, account); //indexed variables
 				congress.queryFilter(filter, proposal.blockNumber).then(vote => {
-		  	  if (vote.length === 0) { //you haven't voted so write vote buttons
-		        proposal_elements[6].innerHTML = "<button id='" + proposalID + "cp'>VOTE</button>";
-    				App.set_up_click_event(proposalID, "vote", proposal);
+		  	  if (vote.length === 0) { //haven't voted so write vote buttons
+		        proposal_elements[6].innerHTML = "<button id='" + ID + "cp'>VOTE</button>"; //cp=check proposal
+    				App.set_up_click_event(ID, "vote", proposal);
 		  		} else 	proposal_elements[6].innerHTML = "VOTED!";
 		  	})
-			}
-			//IF CONDITIONS ALLOW EXECUTION write execute button
-			else {
-	      proposal_elements[6].innerHTML = "<button id='" + proposalID + "ep'>EXECUTE</button>";
-				App.set_up_click_event(proposalID, "execute", proposal);
-				if (Date.now() < proposal[3]*1e3) document.getElementById(proposalID + "ep").disabled = true;
-				else App.watch_for_prop_tallied(proposalID);
+			} else {			 //must be executable so write execute button
+	      proposal_elements[6].innerHTML = "<button id='" + ID + "ep'>EXECUTE</button>";
+				App.set_up_click_event(ID, "execute", proposal);
+				if (Date.now() < proposal[3]*1e3) document.getElementById(ID + "ep").disabled = false;
+				else App.watch_for_prop_tallied(ID);
 			}
 		})
 	},
@@ -169,8 +172,8 @@ export default window.App = {
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "yes'>YES</button>   <button id='" + id + "no'>NO</button>";
               ["yes","no"].forEach(vote => {
               	document.getElementById(id + vote).onclick = () => {
-	                if (vote = "yes") congress.vote(id, true, "");
-	                else if (vote = "no") congress.vote(id, false, "");
+	                if (vote = "yes") congress.vote(id, true, "").catch(err => console.error(err));
+	                else if (vote = "no") congress.vote(id, false, "").catch(err => console.error(err));
 									document.getElementById(id + vote).disabled = true;
 								}
               })
@@ -181,8 +184,8 @@ export default window.App = {
 	    case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
 	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then(() => {
-		        document.getElementById(id + "ep").disabled = true;
 	          console.log("proposal being executed!");
+		        document.getElementById(id + "ep").disabled = true;
 	        })
 	      }
 	  }
