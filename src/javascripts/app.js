@@ -4,7 +4,7 @@ const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache te
 //const startBlock = 14e6; //MAINNET
 const startBlock = 0; //ganache testnet
 let congress_abi=[{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"proposals","outputs":[{"name":"recipient","type":"address"},{"name":"amount","type":"uint256"},{"name":"description","type":"string"},{"name":"minExecutionDate","type":"uint256"},{"name":"executed","type":"bool"},{"name":"proposalPassed","type":"bool"},{"name":"numberOfVotes","type":"uint256"},{"name":"currentResult","type":"int256"},{"name":"proposalHash","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"members","outputs":[{"name":"isMember","type":"bool"},{"name":"name","type":"string"},{"name":"memberSince","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"debatingPeriodInMinutes","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"minimumQuorum","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"majorityMargin","outputs":[{"name":"","type":"int256"}],"payable":false,"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"ID","type":"uint256"},{"indexed":false,"name":"recipient","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"description","type":"string"},{"indexed":false,"name":"numProposals","type":"uint256"}],"name":"LogProposalAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"position","type":"bool"},{"indexed":true,"name":"voter","type":"address"},{"indexed":false,"name":"justification","type":"string"}],"name":"LogVoted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"result","type":"int256"},{"indexed":false,"name":"quorum","type":"uint256"},{"indexed":true,"name":"active","type":"bool"}],"name":"LogProposalTallied","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newMinimumQuorum","type":"uint256"},{"indexed":false,"name":"newDebatingPeriodInMinutes","type":"uint256"},{"indexed":false,"name":"newMajorityMargin","type":"int256"}],"name":"LogChangeOfRules","type":"event"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"},{"name":"memberName","type":"string"}],"name":"addMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"}],"name":"removeMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"minimumQuorumForProposals","type":"uint256"},{"name":"minutesForDebate","type":"uint256"},{"name":"marginOfVotesForMajority","type":"int256"}],"name":"changeVotingRules","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"jobDescription","type":"string"},{"name":"transactionBytecode","type":"bytes"}],"name":"newProposal","outputs":[{"name":"proposalID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"checkProposalCode","outputs":[{"name":"codeChecksOut","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"supportsProposal","type":"bool"},{"name":"justificationText","type":"string"}],"name":"vote","outputs":[{"name":"voteID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"executeProposal","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}];
-let account, congress, minimum_quorum, majority_margin;
+let account, congress;
 let writable = false;
 
 window.App = {
@@ -19,8 +19,6 @@ window.App = {
 			const Ids = new Set();
 			document.getElementById("forMembers").style.display = 'inline-block';
 			//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
-			congress.minimumQuorum().then(mq => minimum_quorum = Number(mq));
-			congress.majorityMargin().then(mm => majority_margin = Number(mm));
 			//WRITE PREVIOUS PROPOSALS
 			congress.queryFilter('LogProposalAdded', startBlock).then(proposals => {
 				for (let proposal of proposals) {
@@ -59,7 +57,6 @@ window.App = {
 			}
 			document.getElementById("left").onclick = () => {
 				document.getElementById("contract").style.display = "none";
-				document.getElementById("send_eth").style.display = "inline-block";
 				document.getElementById("right").style.display = "inline-block";
 				document.getElementById("left").style.display = "none";
 			}
@@ -69,21 +66,21 @@ window.App = {
 				document.getElementById("left").style.display = "inline-block";
 				document.getElementById("add_member").onClick = () => {
 				  document.getElementById("add_member").disabled = true;
-					let beneficiary=congress_addr; //congress
+					let beneficiary=congress_addr;
 				  let weiAmount=0;
 				  let jobDescription="add_member";
 					App.new_proposal(beneficiary, weiAmount, jobDescription);
 				}
 				document.getElementById("rem_member").onclick = () => {
 				  document.getElementById("rem_member").disabled = true;
-				 	let beneficiary=congress_addr; //congress
+				 	let beneficiary=congress_addr;
 				  let weiAmount=0;
 				  let jobDescription="remove_member";
 				  App.new_proposal(beneficiary, weiAmount, jobDescription);
 				}
 				document.getElementById("new_rules").onclick = () => {
 				  document.getElementById("new_rules").disabled = true;
-				  let beneficiary=congress_addr; //congress contract
+				  let beneficiary=congress_addr;
 				  let weiAmount=0;
 				  let jobDescription="change_voting_rules";
 				  App.new_proposal(beneficiary, weiAmount, jobDescription);
@@ -96,14 +93,15 @@ window.App = {
 	new_proposal: (bene, amt, desc) => {
 	  congress.newProposal(bene, amt, desc, App.get_bytecode(bene,desc)).then(() => {
 	    console.log("new proposal initiated");
-	    //document.getElementById(desc).disabled = false;
+	    if (desc !== "send_eth") document.getElementById(desc).disabled = false;
 	  })
 	},
 	//WATCH FOR VOTE
-	watch_for_vote: (ID) => {
+	watch_for_vote: (ID,minimum_quorum,majority_margin) => {
 		let filter = congress.filters.LogVoted(ID);
 	  congress.on(filter, (id, vote, voter) => {
 	    let proposal_elements = document.getElementById(ID).getElementsByTagName("td");
+			console.log(proposal_elements);
 	    congress.proposals(id).then(proposal => {
 				let num_votes = Number(proposal[6]);
 				let cum_vote = Number(proposal[7]);
@@ -132,45 +130,45 @@ window.App = {
     })
 	},
 	//WRITE PROPOSAL
-  write_proposal: (ID) => {
-    congress.proposals(ID).then(proposal => {
-      if (proposal[4]) return;
-		  let _proposal = document.createElement("tr");
-		  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>';
-		  _proposal.id = ID;
-		  let proposal_elements = _proposal.getElementsByTagName('td');
-		  //WRITE TABLE ROW (PROPOSAL)
-			let num_votes = Number(proposal[6]);
-			let cum_vote = Number(proposal[7]);
-	    proposal_elements[0].innerHTML = _proposal.id;
-	    proposal_elements[1].innerHTML = proposal[0]; //recipient
-	    proposal_elements[2].innerHTML = Number(proposal[1])/1e18; //amount
-	    proposal_elements[3].innerHTML = proposal[2]; //description
-	    proposal_elements[4].innerHTML = num_votes;
-	    proposal_elements[5].innerHTML = cum_vote;
-			//APPEND THE PROPOSAL
-		  document.getElementById("activeProposals").append(_proposal);
-			//colour vote counts
-			console.log(minimum_quorum, majority_margin);
-		  (num_votes >= minimum_quorum) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
-		  (cum_vote >= majority_margin) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
-			if (num_votes < minimum_quorum || cum_vote < majority_margin) {
-				App.watch_for_vote(ID)
-				//SEE IF YOU VOTED
-				let filter = congress.filters.LogVoted(ID, null, account); //indexed variables
-				congress.queryFilter(filter, proposal.blockNumber).then(vote => {
-		  	  if (vote.length === 0) { //haven't voted so write vote buttons
-		        proposal_elements[6].innerHTML = "<button id='" + ID + "cp'>VOTE</button>"; //cp=check proposal
-    				App.set_up_click_event(ID, "vote", proposal);
-		  		} else 	proposal_elements[6].innerHTML = "VOTED!";
-		  	})
-			} else {			 //must be executable so write execute button
-	      proposal_elements[6].innerHTML = "<button id='" + ID + "ep'>EXECUTE</button>";
-				App.set_up_click_event(ID, "execute", proposal);
-				if (Date.now() < proposal[3]*1e3) document.getElementById(ID + "ep").disabled = false;
-				else App.watch_for_prop_tallied(ID);
-			}
-		})
+  write_proposal: async (ID) => {
+    let proposal = await congress.proposals(ID);
+    if (proposal[4]) return;
+	  let _proposal = document.createElement("tr");
+	  _proposal.innerHTML = '<td class="head" align="center"></td><td></td><td align="center"></td><td></td><td align="center"></td><td align="center"></td><td class="foot" align="center"></td>';
+	  _proposal.id = ID;
+	  let proposal_elements = _proposal.getElementsByTagName('td');
+	  //WRITE TABLE ROW (PROPOSAL)
+		let num_votes = Number(proposal[6]);
+		let cum_vote = Number(proposal[7]);
+    proposal_elements[0].innerHTML = _proposal.id;
+    proposal_elements[1].innerHTML = proposal[0]; //recipient
+    proposal_elements[2].innerHTML = Number(proposal[1])/1e18; //amount
+    proposal_elements[3].innerHTML = proposal[2]; //description
+    proposal_elements[4].innerHTML = num_votes;
+    proposal_elements[5].innerHTML = cum_vote;
+		//APPEND THE PROPOSAL
+	  document.getElementById("activeProposals").append(_proposal);
+		//colour vote counts
+		let min_quor = Number(await congress.minimumQuorum());
+		let maj_mar = Number(await congress.majorityMargin());
+	  (num_votes >= min_quor) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
+	  (cum_vote >= maj_mar) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
+		if (num_votes < min_quor || cum_vote < maj_mar) {
+			App.watch_for_vote(ID,min_quor,maj_mar)
+			//SEE IF YOU VOTED
+			let filter = congress.filters.LogVoted(ID, null, account); //indexed variables
+			congress.queryFilter(filter, proposal.blockNumber).then(vote => {
+	  	  if (vote.length === 0) { //account has NOT voted so write vote button which checks proposal
+	        proposal_elements[6].innerHTML = "<button id='" + ID + "cp'>VOTE</button>"; //cp=check proposal
+  				App.set_up_click_event(ID, "vote", proposal);
+	  		} else 	proposal_elements[6].innerHTML = "VOTED!";
+	  	})
+		} else {			 //must be executable so write execute button
+      proposal_elements[6].innerHTML = "<button id='" + ID + "ep'>EXECUTE</button>";
+			App.set_up_click_event(ID, "execute", proposal);
+			if (Date.now() < proposal[3]*1e3) document.getElementById(ID + "ep").disabled = false;
+			else App.watch_for_prop_tallied(ID);
+		}
 	},
 	//ADD CLICK EVENT
 	set_up_click_event: (id, action, proposal) => {
@@ -182,8 +180,8 @@ window.App = {
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "yes'>YES</button>   <button id='" + id + "no'>NO</button>";
               ["yes","no"].forEach(vote => {
               	document.getElementById(id + vote).onclick = () => {
-	                if (vote = "yes") congress.vote(id, true, "").catch(err => console.error(err));
-	                else if (vote = "no") congress.vote(id, false, "").catch(err => console.error(err));
+	                if (vote == "yes") congress.vote(id, true, "").catch(err => console.error(err));
+	                else if (vote == "no") congress.vote(id, false, "").catch(err => console.error(err));
 									document.getElementById(id + vote).disabled = true;
 								}
               })
