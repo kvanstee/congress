@@ -90,10 +90,9 @@ window.App = {
   },
 	//END OF App.start()
 	//NEW PROPOSAL
-	new_proposal: (bene, amt, desc) => {
-	  congress.newProposal(bene, amt, desc, App.get_bytecode(bene,desc)).then(() => {
+	new_proposal: (recip, amt, desc) => {
+	  congress.newProposal(recip, amt, desc, App.get_bytecode(recip, desc)).then(() => {
 	    console.log("new proposal initiated");
-	    if (desc !== "send_eth") document.getElementById(desc).disabled = false;
 	  })
 	},
 	//WATCH FOR VOTE
@@ -101,13 +100,11 @@ window.App = {
 		let filter = congress.filters.LogVoted(ID);
 	  congress.on(filter, (id, vote, voter) => {
 	    let proposal_elements = document.getElementById(ID).getElementsByTagName("td");
-			console.log(proposal_elements);
 	    congress.proposals(id).then(proposal => {
 				let num_votes = Number(proposal[6]);
 				let cum_vote = Number(proposal[7]);
 				proposal_elements[4].innerHTML = num_votes; //number of votes
 				proposal_elements[5].innerHTML = cum_vote;  //cumulative vote
-				console.log(minimum_quorum, majority_margin);
 				if (num_votes >= minimum_quorum) proposal_elements[4].style.color = "green";
 				if (cum_vote >= majority_margin) proposal_elements[5].style.color = "green";
 		  	if (num_votes >= minimum_quorum && cum_vote >= majority_margin && Date.now()/1e3 > proposal[3]) {
@@ -220,11 +217,10 @@ window.App = {
 	  }
 	}
 }
-
 window.addEventListener('load', () => {
 	document.getElementById('connect_button').onclick = async () => {
-		document.getElementById('connect_button').style = 'display:none';
-		document.getElementById('read_write').style = 'display:inline-block';
+		document.getElementById('connect_button').style.display = 'none';
+		document.getElementById('read_write').style.display = 'inline-block';
 		document.getElementById('read_write').onclick = () => {
 			writable = true;
 			document.getElementById('read_write').style = 'display:none';
@@ -232,20 +228,18 @@ window.addEventListener('load', () => {
 		//let { providers }  = await import('ethers');
 		const provider =  new providers.Web3Provider(window.ethereum);
 		setTimeout(() => {
-			document.getElementById('read_write').style = 'display:none';
+			document.getElementById('read_write').style.display = 'none';
 			ethereum.request({method:'eth_requestAccounts'}).then(accounts => {
-			  if (accounts[0] !== account) account = accounts[0];
+			  account = accounts[0];
 				if (!writable) {
-					document.getElementById('new_proposal').style = 'display:none';
+					document.getElementById("buttons").style.display = 'none';
 					App.start(provider); //Initialize app ro
 				}
 				else if (writable) {
 					const signer = provider.getSigner();
 					App.start(signer) //Initialize app rw
 				}
-			}).catch((err) => {
-			  console.error(err);
-			})
+			}).catch((err) => console.error(err));
 		},2000);
 	}
 })

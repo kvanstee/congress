@@ -10,24 +10,9 @@
 	.head {font-weight: bold;}
 	.foot {margin-bottom: 20px;}
 }
-#donation {
-	width: 100px;
-}
 table {
   border-collapse: collapse;
 }
-
 td, th {
   border: 2px #DDD solid; padding: 2px; cursor: pointer; text-overflow: ellipsis;
-}
-.executable {
-  background-color: lightgreen;
-}
-.pending {
-    background-color: yellow;
-}.hidden {
-    display: none;
-}
-.shown {
-    display: inline-block;
 }
