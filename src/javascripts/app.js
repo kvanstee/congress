@@ -1,4 +1,4 @@
-import { Contract, BigNumber, utils, providers } from 'ethers';
+//import { Contract, BigNumber, utils, providers } from 'ethers';
 //const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
 //const startBlock = 14e6; //MAINNET
@@ -9,7 +9,7 @@ let writable = false;
 
 window.App = {
   start: async (_provider) => {
-		//let { Contract } = await import('ethers');
+		let { Contract } = await import('ethers');
 		congress = new Contract(congress_addr, congress_abi, _provider);
 		congress.removeAllListeners();
     congress.members(account).then(res => {
@@ -47,10 +47,13 @@ window.App = {
 				majority_margin = Number(maj_margin);
 	    })
 			//NEW PROPOSAL ONCLICKS
-			document.getElementById("send_eth").onclick = () => {
+			document.getElementById("send_eth").onclick = async () => {
+				let { BigNumber } = await import('ethers');
 			  document.getElementById("send_eth").disabled = true;
-			  let beneficiary = prompt("address beneficiary?",account);
-			  let weiAmount = BigNumber.from(10).pow(18).mul(prompt("amount ether?"));
+			  let beneficiary = account; //prompt("address beneficiary?",account);
+				let amount = prompt("amount ether?");
+				if (amount == null) {document.getElementById("send_eth").disabled = false; return;}
+			  let weiAmount = BigNumber.from(10).pow(18).mul(Number(amount));
 			  let jobDescription = prompt("job description?");
 				App.new_proposal(beneficiary, weiAmount, jobDescription);
 				document.getElementById("send_eth").disabled = false;
@@ -197,7 +200,7 @@ window.App = {
 	},
 	//GET BYTECODE
 	get_bytecode: async (contract_addr, job_description) => {
-	  //let { utils } = await import('ethers');
+	  let { utils } = await import('ethers');
 	  switch(contract_addr) {
 	    case congress_addr:
 	      let congr_iface = new utils.Interface(congress_abi);
@@ -225,7 +228,7 @@ window.addEventListener('load', () => {
 			writable = true;
 			document.getElementById('read_write').style = 'display:none';
 		}
-		//let { providers }  = await import('ethers');
+		let { providers }  = await import('ethers');
 		const provider =  new providers.Web3Provider(window.ethereum);
 		setTimeout(() => {
 			document.getElementById('read_write').style.display = 'none';
