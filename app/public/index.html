@@ -4,7 +4,7 @@
   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
   <title>shelterDAO</title>
 	<link rel="stylesheet" type="text/css" href="/app.css"/>
-  <script type="text/javascript" src="/app.js"></script>
+  <script type="application/javascript" src="/app.js"></script>
 </head>
   <body>
 	<button id="connect_button" href="#">CONNECT</button>
@@ -14,13 +14,14 @@
 	</div>
     <div id="content">
       <div id="forMembers" style="display:none">
-        <select id="proposal_options">
-					<option value="SEND_ETH" selected>SEND ETH</option>
-					<option value="ADD_MEMBER">ADD MEMBER</option>
-					<option value="REMOVE_MEMBER">REMOVE MEMBER</option>
-					<option value="NEW_RULES">CHANGE VOTING RULES</option>
-				</select>
-        <button id="new_proposal" href="#">NEW PROPOSAL</button><br><br>
+        <button id="send_eth">SEND ETH</button>
+				<button id="left" style="display:none"><</button>
+				<button id="right">></button>
+				<div id="contract" style="display:none">
+					<button id="add_member">ADD MEMBER</button>
+					<button id="rem_member">REMOVE MEMBER</button>
+					<button id="new_rules">NEW VOTING RULES</button>
+				</div>
 				<table>
 				  <tr><th>PROPOSAL NUMBER</th><th>RECIPIENT</th><th>AMOUNT ETH</th><th>JOB DESCRIPTION</th><th>TOTAL VOTES</th><th>PROGRESSIVE VOTE</th><th>STATUS</th></tr>
 			    <tbody id="activeProposals"></tbody>

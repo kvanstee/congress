@@ -3,7 +3,7 @@
 	"sideEffects": ["*.css"],
   "version": "1.0.0",
   "description": "multi-sig contract interaction",
-  "browser": "/src/javascripts/app.js",
+  "browser": "/app/pubic/app.js",
   "dependencies": {
     "ethers": "^5.6.4"
   },
@@ -11,7 +11,8 @@
   },
   "scripts": {
 		"start": "esbuild --bundle src/javascripts/app.js --servedir=app/public  --outfile=app/public/app.js",
-		"build": "esbuild --bundle src/javascripts/app.js  --outfile=app/public/app.js --minify --tree-shaking=true"
+		"build": "esbuild --bundle src/javascripts/app.js  --outfile=app/public/app.js --minify --tree-shaking=true",
+		"serve": "esbuild --servedir=app/public"
   },
   "repository": {
     "type": "git",
