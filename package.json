@@ -10,8 +10,8 @@
   "devDependencies": {
   },
   "scripts": {
-		"start": "esbuild --bundle src/javascripts/app.js --servedir=app/public  --outfile=app/public/app.js",
-		"build": "esbuild --bundle src/javascripts/app.js  --outfile=app/public/app.js --minify --tree-shaking=true",
+		"start": "esbuild --bundle src/javascripts/app.js --splitting --servedir=app/public  --format=esm --outdir=app/public/",
+		"build": "esbuild --bundle src/javascripts/app.js  --splitting  --outdir=app/public --format=esm --minify",
 		"serve": "esbuild --servedir=app/public"
   },
   "repository": {
