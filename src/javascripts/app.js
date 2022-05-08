@@ -1,11 +1,9 @@
-//import { Contract, BigNumber, utils, providers } from 'ethers';
 //const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
 const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
 //const startBlock = 14e6; //MAINNET
 const startBlock = 0; //ganache testnet
 let congress_abi=[{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"proposals","outputs":[{"name":"recipient","type":"address"},{"name":"amount","type":"uint256"},{"name":"description","type":"string"},{"name":"minExecutionDate","type":"uint256"},{"name":"executed","type":"bool"},{"name":"proposalPassed","type":"bool"},{"name":"numberOfVotes","type":"uint256"},{"name":"currentResult","type":"int256"},{"name":"proposalHash","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"members","outputs":[{"name":"isMember","type":"bool"},{"name":"name","type":"string"},{"name":"memberSince","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"debatingPeriodInMinutes","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"minimumQuorum","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"majorityMargin","outputs":[{"name":"","type":"int256"}],"payable":false,"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"ID","type":"uint256"},{"indexed":false,"name":"recipient","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"description","type":"string"},{"indexed":false,"name":"numProposals","type":"uint256"}],"name":"LogProposalAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"position","type":"bool"},{"indexed":true,"name":"voter","type":"address"},{"indexed":false,"name":"justification","type":"string"}],"name":"LogVoted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"proposalID","type":"uint256"},{"indexed":false,"name":"result","type":"int256"},{"indexed":false,"name":"quorum","type":"uint256"},{"indexed":true,"name":"active","type":"bool"}],"name":"LogProposalTallied","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newMinimumQuorum","type":"uint256"},{"indexed":false,"name":"newDebatingPeriodInMinutes","type":"uint256"},{"indexed":false,"name":"newMajorityMargin","type":"int256"}],"name":"LogChangeOfRules","type":"event"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"},{"name":"memberName","type":"string"}],"name":"addMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"targetMember","type":"address"}],"name":"removeMember","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"minimumQuorumForProposals","type":"uint256"},{"name":"minutesForDebate","type":"uint256"},{"name":"marginOfVotesForMajority","type":"int256"}],"name":"changeVotingRules","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"jobDescription","type":"string"},{"name":"transactionBytecode","type":"bytes"}],"name":"newProposal","outputs":[{"name":"proposalID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"beneficiary","type":"address"},{"name":"weiAmount","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"checkProposalCode","outputs":[{"name":"codeChecksOut","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"supportsProposal","type":"bool"},{"name":"justificationText","type":"string"}],"name":"vote","outputs":[{"name":"voteID","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"proposalNumber","type":"uint256"},{"name":"transactionBytecode","type":"bytes"}],"name":"executeProposal","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}];
 let account, congress;
-let writable = false;
 
 window.App = {
   start: async (_provider) => {
@@ -101,7 +99,7 @@ window.App = {
 	//WATCH FOR VOTE
 	watch_for_vote: (ID,minimum_quorum,majority_margin) => {
 		let filter = congress.filters.LogVoted(ID);
-	  congress.on(filter, (id, vote, voter) => {
+	  congress.on(filter, (id, null, voter) => {
 	    let proposal_elements = document.getElementById(ID).getElementsByTagName("td");
 	    congress.proposals(id).then(proposal => {
 				let num_votes = Number(proposal[6]);
@@ -124,7 +122,7 @@ window.App = {
 	//WATCH FOR PROPOSALTALLIED
 	watch_for_prop_tallied: (ID) => {
 		let filter = congress.filters.LogProposalTallied(ID)
-		congress.once(filter, (id,res,num_votes,active) => {
+		congress.once(filter, (null,null,null,active) => {
 			if (!active) return
       document.getElementById(ID).getElementsByTagName("td")[6].innerHTML = "EXECUTED!"
     })
@@ -191,9 +189,9 @@ window.App = {
 	      break;
 	    case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
+	        document.getElementById(id + "ep").disabled = true;
 	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then(() => {
 	          console.log("proposal being executed!");
-		        document.getElementById(id + "ep").disabled = true;
 	        })
 	      }
 	  }
@@ -223,26 +221,13 @@ window.App = {
 window.addEventListener('load', () => {
 	document.getElementById('connect_button').onclick = async () => {
 		document.getElementById('connect_button').style.display = 'none';
-		document.getElementById('read_write').style.display = 'inline-block';
-		document.getElementById('read_write').onclick = () => {
-			writable = true;
-			document.getElementById('read_write').style = 'display:none';
-		}
 		let { providers }  = await import('ethers');
 		const provider =  new providers.Web3Provider(window.ethereum);
-		setTimeout(() => {
-			document.getElementById('read_write').style.display = 'none';
-			ethereum.request({method:'eth_requestAccounts'}).then(accounts => {
-			  account = accounts[0];
-				if (!writable) {
-					document.getElementById("buttons").style.display = 'none';
-					App.start(provider); //Initialize app ro
-				}
-				else if (writable) {
-					const signer = provider.getSigner();
-					App.start(signer) //Initialize app rw
-				}
-			}).catch((err) => console.error(err));
-		},2000);
+		ethereum.request({method:'eth_requestAccounts'}).then(accounts => {
+		  account = accounts[0];
+			const signer = provider.getSigner();
+			App.start(signer) //Initialize app rw
+			//App.start(provider) //Initialize app ro
+		})
 	}
 })
