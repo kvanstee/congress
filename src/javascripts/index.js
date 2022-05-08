@@ -1,18 +1,18 @@
 require('../stylesheets/app.css');
 //ADDRESSES
-const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
-//const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
-const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
-//const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
+//const congress_addr = '0x3de0c040705d50d62d1c36bde0ccbad20606515a'; //MAINNET
+const congress_addr = '0x1c99193C00969AE96a09C7EF38590BAc54650f9c'; //ganache testnet
+//const dai_token_addr = '0x6b175474e89094c44da98b954eedeac495271d0f'; //MAINNET
+const dai_token_addr = '0x9D92eda03eb4F281c0B14DA9560Ea56Ea3df4DD6'; //ganache testnet
 //const weth_token_addr = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; //MAINNET WETH TOKEN ADDRESS
 //const matching_market_addr = '0x39755357759ce0d7f32dc8dc45414cca409ae24e'; //MAINNET
-const startBlock = 10215507; //MAINNET
-//const startBlock = 0; //ganache testnet
+//const startBlock = 10215507; //MAINNET
+const startBlock = 0; //ganache testnet
 //ABIs
 const congress_abi = require('../../build/abis/Congress_abi.json');
 //const matching_market_abi= require('../../build/abis/Matching_market_abi.json');
-const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
-//const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
+//const ERC20_token_abi = require('../../build/abis/ERC20_abi.json'); //MAINNET
+const ERC20_token_abi = require('../../build/abis/ERC20_abi_test.json'); //ganache testnet
 
 let account = null;
 let congress;
@@ -21,7 +21,6 @@ let dai;
 //let matching_market;
 //let members = [];
 let minimum_quorum, majority_margin;
-let writable = false;
 
 window.App = {
   start: async (_provider) => {
@@ -63,119 +62,83 @@ window.App = {
 			App.writeBalances(dai_token_addr);
     })
     congress.members(account).then((res) => {
-			switch (res[0]) { //ARE YOU  A MEMBER?
-				case false: //NOT A MEMBER
-					return;
-					break;
-				case true: //MEMBERS ONLY
-					const Ids = new Set();
-					//weth = new ethers.Contract(weth_token_addr, ERC20_token_abi, _provider);
-					//matching_market = new ethers.Contract(matching_market_addr, matching_market_abi, _provider);
-					document.getElementById("forMembers").className = 'shown';
-					//BALANCES STRIP
-					const _balances = document.createElement("tr");
-					_balances.innerHTML = "<td id='eth_bal'></td><td id='dai_bal'></td>" //<td id='weth_bal'></td>*/";
-					App.writeBalances([congress_addr,dai_token_addr]);
-					document.getElementById("balances").append(_balances);
-					//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
-					congress.minimumQuorum().then((quorum) => minimum_quorum = quorum.toNumber());
-			    congress.majorityMargin().then((margin) => majority_margin = margin.toNumber());
-					//WRITE PREVIOUS PROPOSALS
-					congress.queryFilter('LogProposalAdded', startBlock).then((proposals) => {
-						for (let proposal of proposals) {
-							let proposalID = Number(proposal.args.proposalID);
-              let filter = congress.filters.LogProposalTallied(proposalID);
-							congress.queryFilter(filter ,proposal.blockNumber, 'latest').then((prop_tallied) => {
-								if (prop_tallied.length !== 0) return;
-              	Ids.add(proposalID);
-								App.write_proposal(proposalID);
-							})
-						}
+			if (!res) return;
+			//!!!!!  MEMBERS FUNCTIONS   !!!!!
+			const Ids = new Set();
+			//weth = new ethers.Contract(weth_token_addr, ERC20_token_abi, _provider);
+			//matching_market = new ethers.Contract(matching_market_addr, matching_market_abi, _provider);
+			document.getElementById("forMembers").className = 'shown';
+			//BALANCES STRIP
+			const _balances = document.createElement("tr");
+			_balances.innerHTML = "<td id='eth_bal'></td><td id='dai_bal'></td>" //<td id='weth_bal'></td>*/";
+			App.writeBalances([congress_addr,dai_token_addr]);
+			document.getElementById("balances").append(_balances);
+			//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
+			congress.minimumQuorum().then((quorum) => minimum_quorum = quorum.toNumber());
+	    congress.majorityMargin().then((margin) => majority_margin = margin.toNumber());
+			//WRITE PREVIOUS PROPOSALS
+			congress.queryFilter('LogProposalAdded', startBlock).then((proposals) => {
+				for (let proposal of proposals) {
+					let proposalID = Number(proposal.args.proposalID);
+          let filter = congress.filters.LogProposalTallied(proposalID);
+					congress.queryFilter(filter ,proposal.blockNumber, 'latest').then((prop_tallied) => {
+						if (prop_tallied.length !== 0) return;
+          	Ids.add(proposalID);
+						App.write_proposal(proposalID);
 					})
-					//WATCH FOR AND WRITE NEW PROPOSAL
-					congress.on('LogProposalAdded', (proposalID) => {
-						let id = proposalID.toNumber()
-						if (Ids.has(id)) return;
-						Ids.add(id);
-						App.write_proposal(id);
-					})
-					// WATCH FOR CHANGE OF RULES
-			    congress.on('LogChangeOfRules', (min_quorum, maj_margin) => {
-						minimum_quorum = min_quorum.toNumber();
-						majority_margin = maj_margin.toNumber();
-			    })
-					//NEW PROPOSAL ONCLICK
-				  document.getElementById("new_proposal").onclick = () => {
-						document.getElementById("new_proposal").disabled = true;
-				    let proposal = document.getElementById("proposal_options").value;
-				    let transactionBytecode;
-				    let beneficiary;
-				    let weiAmount;
-				    let jobDescription;
-				    switch (proposal) {
-				      case "SEND_ETH":
-				        beneficiary = prompt("address beneficiary?");
-								weiAmount = BigNumber.from(10).pow(18).mul(prompt("amount ether?"));
-				        jobDescription = prompt("job description?");
-								break;
-				      case "SEND_DAI":
-								weiAmount=0;
-				        beneficiary = dai_token_addr; //dai token
-				        jobDescription = "send_dai";
-								break;
-				      case "ADD_MEMBER":
-								beneficiary=congress_addr; //congress
-								weiAmount=0;
-								jobDescription="add_member";
-								break;
-				      case "REMOVE_MEMBER":
-								beneficiary=congress_addr; //congress
-								weiAmount=0;
-								jobDescription="remove_member";
-								break;
-				      case "NEW_RULES":
-				        beneficiary=congress_addr; //congress contract
-				        weiAmount=0;
-				        jobDescription="change_voting_rules";
-								break;
-							/*case "ETH_TO_WETH":
-								beneficiary=weth_token_addr; //weth contract
-								weiAmount=ethers.BigNumber.from(10).pow(18).mul(prompt("amount of weth tokens to buy?"));
-								jobDescription="eth_to_weth";
-								break;
-							case "WETH_TO_ETH":
-								beneficiary=weth_token_addr; //weth contract
-				        weiAmount=0;
-				        jobDescription="weth_to_eth";
-								break;
-							case "WETH_TO_DAI":
-								beneficiary=matching_market_addr; //matching market contract
-								weiAmount=0;
-				        jobDescription="weth_to_dai";
-								break;
-							case "DAI_TO_WETH":
-								beneficiary=matching_market_addr; //matching market contract
-								weiAmount=0;
-				        jobDescription="dai_to_weth";
-								break;
-							case "UNLOCK_TO_SELL_DAI":
-								beneficiary=dai_token_addr;
-								weiAmount=0;
-								jobDescription="unlock_dai";
-								break;
-				      case "UNLOCK_TO_SELL_WETH":
-				        beneficiary=weth_token_addr;
-				        weiAmount=0;
-				        jobDescription="unlock_weth";
-								break;*/
-							default:
-								return;
-				    }
-						congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
-				      console.log("new proposal initiated");
-							document.getElementById('new_proposal').disabled = false;
-				    })
-				  }
+				}
+			})
+			//WATCH FOR AND WRITE NEW PROPOSAL
+			congress.on('LogProposalAdded', (proposalID) => {
+				let id = proposalID.toNumber()
+				if (Ids.has(id)) return;
+				Ids.add(id);
+				App.write_proposal(id);
+			})
+			// WATCH FOR CHANGE OF RULES
+	    congress.on('LogChangeOfRules', (min_quorum, maj_margin) => {
+				minimum_quorum = min_quorum.toNumber();
+				majority_margin = maj_margin.toNumber();
+	    })
+			//NEW PROPOSAL ONCLICK
+		  document.getElementById("new_proposal").onclick = () => {
+				document.getElementById("new_proposal").disabled = true;
+		    let proposal = document.getElementById("proposal_options").value;
+		    let transactionBytecode;
+		    let beneficiary;
+		    let weiAmount;
+		    let jobDescription;
+		    switch (proposal) {
+		      case "SEND_ETH":
+		        beneficiary = prompt("address beneficiary?");
+						weiAmount = BigNumber.from(10).pow(18).mul(prompt("amount ether?"));
+		        jobDescription = prompt("job description?");
+						break;
+		      case "SEND_DAI":
+						weiAmount=0;
+		        beneficiary = dai_token_addr; //dai token
+		        jobDescription = "send_dai";
+						break;
+		      case "ADD_MEMBER":
+						beneficiary=congress_addr; //congress
+						weiAmount=0;
+						jobDescription="add_member";
+						break;
+		      case "REMOVE_MEMBER":
+						beneficiary=congress_addr; //congress
+						weiAmount=0;
+						jobDescription="remove_member";
+						break;
+		      case "NEW_RULES":
+		        beneficiary=congress_addr; //congress contract
+		        weiAmount=0;
+		        jobDescription="change_voting_rules";
+						break;
+		    }
+				congress.newProposal(beneficiary, weiAmount, jobDescription, App.get_bytecode(beneficiary, jobDescription)).then(() => {
+		      console.log("new proposal initiated");
+					document.getElementById('new_proposal').disabled = false;
+		    })
 			}
 		})
   },
@@ -188,7 +151,7 @@ window.App = {
 			if (!active) return;
 			App.writeBalances([congress_addr, dai_token_addr]);
       document.getElementById(proposalID).getElementsByTagName("td")[6].innerHTML = "EXECUTED!";
-    });
+    })
 	},
 	//WATCH FOR VOTE
 	watch_for_vote: (proposalID) => {
@@ -249,6 +212,7 @@ window.App = {
 			switch (addr) {
 				case congress_addr:
 					ethereum.request({method:"eth_getBalance", params:[congress_addr]}).then((bal) => {
+						console.log(bal)
 						document.getElementById("eth_bal").innerHTML = "ETH: " + (bal/1e18).toFixed(2);
 					})
 	        break;
@@ -369,38 +333,19 @@ window.App = {
       default:
         return "0x";
     }
-  },
+  }
 },
 window.addEventListener('load', () => {
 	document.getElementById('connect_button').onclick = async () => {
 		document.getElementById('connect_button').className = 'hidden';
-		document.getElementById('read_write').className = 'shown';
-		document.getElementById('read_write').onclick = () => {
-			writable = true;
-			document.getElementById('read_write').className = 'hidden';
-			document.getElementById('new_proposal').disabled = false;
-		}
 		let {providers}  = await import('ethers');
 		const provider =  new providers.Web3Provider(window.ethereum);
-		setTimeout(() => {
-			document.getElementById('read_write').className = 'hidden';
-			ethereum.request({method:'eth_requestAccounts'}).then((accounts) => {
-			  if (accounts.length == 0) {
-			    alert('Please connect to MetaMask');
-			  } else if (accounts[0] !== account) {
-			    account = accounts[0];
-					if (!writable) {
-						document.getElementById('new_proposal').disabled = true;
-						App.start(provider); //Initialize app ro
-					}
-					else if (writable) {
-						const signer = provider.getSigner();
-						App.start(signer); //Initialize app rw
-					}
-				} else console.log('Please install MetaMask!');
-			}).catch((err) => {
-			  console.error(err);
-			})
-		},2000);
+		ethereum.request({method:'eth_requestAccounts'}).then(accounts => {
+	    account = accounts[0];
+			const signer = provider.getSigner();
+			App.start(signer); //Initialize app rw
+		}).catch((err) => {
+		  console.error(err);
+		})
 	}
 })

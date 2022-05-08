@@ -3,21 +3,16 @@
 	"sideEffects": ["*.css"],
   "version": "1.0.0",
   "description": "multi-sig contract interaction",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
+  "browser": "/app/pubic/app.js",
   "dependencies": {
-    "css-loader": "^2.1.1",
-    "ethers": "^5.0.28",
-    "style-loader": "^2.0.0"
+    "ethers": "^5.6.4"
   },
   "devDependencies": {
-    "webpack-cli": "^3.2.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+		"start": "esbuild --bundle src/javascripts/app.js --splitting --servedir=app/public  --format=esm --outdir=app/public/",
+		"build": "esbuild --bundle src/javascripts/app.js  --splitting  --outdir=app/public --format=esm --minify",
+		"serve": "esbuild --servedir=app/public"
   },
   "repository": {
     "type": "git",

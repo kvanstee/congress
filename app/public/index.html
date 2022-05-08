@@ -3,38 +3,27 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
   <title>shelterDAO</title>
-  <script type="text/javascript" src="./bundle.js"></script>
+	<link rel="stylesheet" type="text/css" href="/app.css"/>
+  <script type="application/javascript" src="/app.js"></script>
 </head>
   <body>
 	<button id="connect_button" href="#">CONNECT</button>
-	<button id="read_write" class="hidden" href="#">RW</button><br>
-	<table>
-    <tbody id="balances"></tbody>
-	</table>
-  <div id="heading">
-		<h1><i>shelter</i>DAO </h1>
-    <button id="donate_button" href="#">DONATE</button><br>
-			<div id="donate_div" class="hidden">
-				<input  id="donation" placeholder="amount"><select id="crypto_currency"><option value="ETH">ETH</option><option value="DAI">DAI</option></select>
-				<button id="donate" href="#">DONATE</button>
-			</div><br><br>
+	<h1><i>shelter</i>DAO </h1>
+  <div id="forMembers" style="display:none">
+    <button id="send_eth">SEND ETH</button>
+		<button id="left" style="display:none"><</button>
+		<button id="right">></button>
+		<div id="contract" style="display:none">
+			<button id="add_member">ADD MEMBER</button>
+			<button id="remove_member">REMOVE MEMBER</button>
+			<button id="change_voting_rules">NEW VOTING RULES</button>
+		</div>
+		<br><br>
+		<table>
+		  <tr><th>PROPOSAL NUMBER</th><th>RECIPIENT</th><th>AMOUNT ETH</th><th>JOB DESCRIPTION</th><th>TOTAL VOTES</th><th>PROGRESSIVE VOTE</th><th>STATUS</th></tr>
+	    <tbody id="activeProposals"></tbody>
+		</table>
 	</div>
-    <div id="content">
-      <div id="forMembers" class="hidden">
-        <button id="new_proposal" href="#">NEW PROPOSAL</button>
-          <select id="proposal_options">
-						<option value="SEND_ETH" selected>SEND ETH</option>
-						<option value="SEND_DAI">SEND DAI</option>
-						<option value="ADD_MEMBER">ADD MEMBER</option>
-						<option value="REMOVE_MEMBER">REMOVE MEMBER</option>
-						<option value="NEW_RULES">CHANGE VOTING RULES</option>
-					</select><br><br>
-	<table>
-	  <tr><th>PROPOSAL NUMBER</th><th>RECIPIENT</th><th>AMOUNT ETH</th><th>JOB DESCRIPTION</th><th>TOTAL VOTES</th><th>PROGRESSIVE VOTE</th><th>STATUS</th></tr>
-          <tbody id="activeProposals"></tbody>
-	</table>
-      </div>
-    </div>
   </body>
 </html>
 
