@@ -13,10 +13,8 @@ window.App = {
     congress.members(account).then(res => {
 			if (!res[0]) return;  //NOT A MEMBER
 			//   !!!!MEMBER!!!!
-			console.log("MEMBER!")
 			const Ids = new Set();
 			document.getElementById("forMembers").style.display = 'inline-block';
-			//SET MINIMUM_QUORUM AND MAJORITY_MARGIN
 			//WRITE PREVIOUS PROPOSALS
 			congress.queryFilter('LogProposalAdded', startBlock).then(proposals => {
 				for (let proposal of proposals) {
@@ -53,7 +51,7 @@ window.App = {
 				if (amount == null) {document.getElementById("send_eth").disabled = false; return;}
 			  let weiAmount = BigNumber.from(10).pow(18).mul(Number(amount));
 			  let jobDescription = prompt("job description?");
-				App.new_proposal(beneficiary, weiAmount, jobDescription);
+				congress.newProposal(beneficiary, weiAmount, jobDescription, "0x").catch(err => alert(err));
 				document.getElementById("send_eth").disabled = false;
 			}
 			document.getElementById("left").onclick = () => {
@@ -65,41 +63,20 @@ window.App = {
 				document.getElementById("contract").style.display = "inline-block";
 				document.getElementById("right").style.display = "none";
 				document.getElementById("left").style.display = "inline-block";
-				document.getElementById("add_member").onClick = () => {
-				  document.getElementById("add_member").disabled = true;
-					let beneficiary=congress_addr;
-				  let weiAmount=0;
-				  let jobDescription="add_member";
-					App.new_proposal(beneficiary, weiAmount, jobDescription);
-				}
-				document.getElementById("rem_member").onclick = () => {
-				  document.getElementById("rem_member").disabled = true;
-				 	let beneficiary=congress_addr;
-				  let weiAmount=0;
-				  let jobDescription="remove_member";
-				  App.new_proposal(beneficiary, weiAmount, jobDescription);
-				}
-				document.getElementById("new_rules").onclick = () => {
-				  document.getElementById("new_rules").disabled = true;
-				  let beneficiary=congress_addr;
-				  let weiAmount=0;
-				  let jobDescription="change_voting_rules";
-				  App.new_proposal(beneficiary, weiAmount, jobDescription);
-				}
+				//contract functions: add_member remove_membner, change_votingn_rules
+				["add_member","remove_member","change_voting_rules"].forEach(action => {
+					document.getElementById(action).onclick = () => {
+					  congress.newProposal(congress_addr,0,action, App.get_bytecode(congress_addr,action)).catch(err => alert(err));
+					}
+				})
 			}
 		})
   },
 	//END OF App.start()
-	//NEW PROPOSAL
-	new_proposal: (recip, amt, desc) => {
-	  congress.newProposal(recip, amt, desc, App.get_bytecode(recip, desc)).then(() => {
-	    console.log("new proposal initiated");
-	  })
-	},
 	//WATCH FOR VOTE
 	watch_for_vote: (ID,minimum_quorum,majority_margin) => {
 		let filter = congress.filters.LogVoted(ID);
-	  congress.on(filter, (id, null, voter) => {
+	  congress.on(filter, (id, vote, voter) => {
 	    let proposal_elements = document.getElementById(ID).getElementsByTagName("td");
 	    congress.proposals(id).then(proposal => {
 				let num_votes = Number(proposal[6]);
@@ -122,7 +99,7 @@ window.App = {
 	//WATCH FOR PROPOSALTALLIED
 	watch_for_prop_tallied: (ID) => {
 		let filter = congress.filters.LogProposalTallied(ID)
-		congress.once(filter, (null,null,null,active) => {
+		congress.once(filter, (id,res,quorum,active) => {
 			if (!active) return
       document.getElementById(ID).getElementsByTagName("td")[6].innerHTML = "EXECUTED!"
     })
@@ -178,8 +155,8 @@ window.App = {
 	            document.getElementById(id).getElementsByTagName("td")[6].innerHTML = "<button id='" + id + "yes'>YES</button>   <button id='" + id + "no'>NO</button>";
               ["yes","no"].forEach(vote => {
               	document.getElementById(id + vote).onclick = () => {
-	                if (vote == "yes") congress.vote(id, true, "").catch(err => console.error(err));
-	                else if (vote == "no") congress.vote(id, false, "").catch(err => console.error(err));
+	                if (vote == "yes") congress.vote(id, true, "").catch(err => alert(err));
+	                else if (vote == "no") congress.vote(id, false, "").catch(err => alert(err));
 									document.getElementById(id + vote).disabled = true;
 								}
               })
@@ -190,9 +167,7 @@ window.App = {
 	    case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
 	        document.getElementById(id + "ep").disabled = true;
-	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).then(() => {
-	          console.log("proposal being executed!");
-	        })
+	        congress.executeProposal(id, App.get_bytecode(proposal[0], proposal[2])).catch(err => alert(err));
 	      }
 	  }
 	},
