@@ -37,11 +37,6 @@ window.App = {
 					App.write_proposal(id);
 				}
 			})
-			// WATCH FOR CHANGE OF RULES
-	    congress.on('LogChangeOfRules', (min_quorum, maj_margin) => {
-				minimum_quorum = Number(min_quorum);
-				majority_margin = Number(maj_margin);
-	    })
 			//NEW PROPOSAL ONCLICKS
 			document.getElementById("send_eth").onclick = async () => {
 				let { BigNumber } = await import('ethers');
