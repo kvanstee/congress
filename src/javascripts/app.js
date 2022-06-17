@@ -101,6 +101,8 @@ window.App = {
 		let cum_vote = Number(proposal[7]);
 		proposal_elements[4].innerHTML = num_votes;
 		proposal_elements[5].innerHTML = cum_vote;
+		(num_votes >= min_quor) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
+	  (cum_vote >= maj_mar) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
 		if (num_votes >= 1 ) {
 			congress.once(congress.filters.LogProposalTallied(ID), () => {
 				document.getElementById(ID).getElementsByTagName("td")[6].innerHTML = "executed";
@@ -148,6 +150,7 @@ window.App = {
 	      break;
 	    case "execute":
 	      document.getElementById(id + "ep").onclick = () => {
+					document.getElementById(id + "ep").disabled = true;
 	        congress.executeProposal(id, App.get_bytecode(proposal[2]));
 	      }
 	      break;
