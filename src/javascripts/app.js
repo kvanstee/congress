@@ -14,7 +14,7 @@ window.App = {
 		congress.removeAllListeners();
 		min_quor = Number(await congress.minimumQuorum());
 		maj_mar = Number(await congress.majorityMargin());
-    congress.members(account).then(async res => {
+    congress.members(account).then(res => {
 			if (!res[0]) return;  //NOT A MEMBER
 			//   !!!!MEMBER!!!!
 			const Ids = new Set();
