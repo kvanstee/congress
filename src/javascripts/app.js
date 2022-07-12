@@ -24,9 +24,9 @@ window.App = {
 					const ID = Number(proposal.args.ID);
           const prop_tallied = congress.filters.LogProposalTallied(ID);
 					congress.queryFilter(prop_tallied ,proposal.blockNumber, 'latest').then(tallied => {
-						if (tallied.length !== 0) return;
+						if (tallied.length !== 0) return; //proposal tallied
 	      		const filter = congress.filters.LogVoted(ID,null,account);
-						congress.queryFilter(filter,proposal.blockNumber,'latest').then(res => {
+						congress.queryFilter(filter,proposal.blockNumber,'latest').then(res => { //have you voted?
 							if (res.length === 1)	App.write_proposal(ID,true);
 							else App.write_proposal(ID,false);
 						})
@@ -35,7 +35,6 @@ window.App = {
 			})
 			//WATCH FOR AND WRITE NEW PROPOSAL
 			congress.on('LogProposalAdded', (ID) => {
-				console.log("prop_added: " + ID);
 				const id = Number(ID);
 				App.write_proposal(id,false);
 			})
@@ -99,10 +98,10 @@ window.App = {
 		  _proposal.id = ID;
 		  //WRITE TABLE ROW (PROPOSAL)
 			proposal_elements = _proposal.getElementsByTagName('td');
-	    proposal_elements[0].innerHTML = _proposal.id;
-	    proposal_elements[1].innerHTML = proposal[0]; //recipient
-	    proposal_elements[2].innerHTML = Number(proposal[1])/1e18; //amount
-	    proposal_elements[3].innerHTML = proposal[2]; //description
+	    proposal_elements[0].innerText = _proposal.id;
+	    proposal_elements[1].innerText = proposal[0]; //recipient
+	    proposal_elements[2].innerText = Number(proposal[1])/1e18; //amount
+	    proposal_elements[3].innerText = proposal[2]; //description
 		  document.getElementById("activeProposals").append(_proposal);
 		} else {
 			proposal_elements = document.getElementById(ID).getElementsByTagName('td');
@@ -110,8 +109,8 @@ window.App = {
 		}
 		let num_votes = Number(proposal[6]);
 		let cum_vote = Number(proposal[7]);
-		proposal_elements[4].innerHTML = num_votes;
-		proposal_elements[5].innerHTML = cum_vote;
+		proposal_elements[4].innerText = num_votes;
+		proposal_elements[5].innerText = cum_vote;
 		(num_votes >= min_quor) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 	  (cum_vote >= maj_mar) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
     if (!voted) { //have NOT voted so set up vote button
@@ -139,7 +138,10 @@ window.App = {
 					document.getElementById(ID + "ep").disabled = true;
 	        congress.executeProposal(ID, App.get_bytecode(proposal[2]));
 	      }
-			} else proposal_elements[6].innerText = "voted";
+			} else {
+				if (proposal_elements[6].innerText === "voted") return;
+				proposal_elements[6].innerText = "voted";
+			}
 		}
 	},
 	//GET BYTECODE
@@ -170,7 +172,6 @@ window.addEventListener('load', () => {
 		  const account = accounts[0];
 			const signer = provider.getSigner();
 			App.start(account, signer) //Initialize app rw
-			//App.start(provider) //Initialize app ro
 		})
 	}
 })
