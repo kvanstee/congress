@@ -63,7 +63,7 @@ window.App = {
 				if (amount === null) {document.getElementById("send_eth").disabled = false; return;}
 			  const weiAmount = BigNumber.from(10).pow(18).mul(Number(amount));
 			  const jobDescription = prompt("job description?");
-				congress.newProposal(beneficiary, weiAmount, jobDescription, "0x");;
+				congress.newProposal(beneficiary, weiAmount, jobDescription, "0x");
 				document.getElementById("send_eth").disabled = false;
 			}
 			document.getElementById("left").onclick = () => {
@@ -75,11 +75,10 @@ window.App = {
 				document.getElementById("contract").style.display = "inline-block";
 				document.getElementById("right").style.display = "none";
 				document.getElementById("left").style.display = "inline-block";
-
-				//contract functions: add_member remove_membner, change_votingn_rules
+				//contract functions: add_member remove_member, change_voting_rules
 				["add_member","remove_member","change_voting_rules"].forEach(action => {
 					document.getElementById(action).onclick = () => {
-					  congress.newProposal(congress_addr,0,action, App.get_bytecode(action));
+					  congress.newProposal(congress_addr,0,action,App.get_bytecode(action));
 					}
 				})
 			}
@@ -105,7 +104,7 @@ window.App = {
 		  document.getElementById("activeProposals").append(_proposal);
 		} else {
 			proposal_elements = document.getElementById(ID).getElementsByTagName('td');
-			if (proposal_elements[6].innerText === "voted") voted = true;
+			if (["voted","voting"].includes(proposal_elements[6].innerText)) voted = true;
 		}
 		let num_votes = Number(proposal[6]);
 		let cum_vote = Number(proposal[7]);
@@ -113,32 +112,40 @@ window.App = {
 		proposal_elements[5].innerText = cum_vote;
 		(num_votes >= min_quor) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 	  (cum_vote >= maj_mar) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
-    if (!voted) { //have NOT voted so set up vote button
+    let bytecode = "0x";
+		if (!voted) { //have NOT voted so set up vote button even if contract fully executable
 			if (proposal_elements[6].innerText === "VOTE") return; //no point rewriting vote button
 	  	proposal_elements[6].innerHTML = "<button id=" + ID + "cp>VOTE</button>";
-      document.getElementById(ID + "cp").onclick = () => {
-        congress.checkProposalCode(ID, proposal[0], proposal[1], App.get_bytecode(proposal[2])).then((code_checks) => {
+      document.getElementById(ID + "cp").onclick = () => { //check if member knows proposal
+				if (["change_voting_rules","add_member","remove_member"].includes(proposal[2])) bytecode = App.get_bytecode(proposal[2]);
+        congress.checkProposalCode(ID,proposal[0],proposal[1],bytecode).then((code_checks) => {
           if (code_checks) { //write YES/NO buttons if bytecode checks true
             document.getElementById(ID).getElementsByTagName("td")[6].innerHTML = "<button id='" + ID + "yes'>YES</button>   <button id='" + ID + "no'>NO</button>";
             ["yes","no"].forEach(vote => {
             	document.getElementById(ID + vote).onclick = () => {
                 if (vote === "yes") congress.vote(ID, true, "");
                 else if (vote === "no") congress.vote(ID, false, "");
-								document.getElementById(ID + vote).disabled = true;
+								proposal_elements[6].innerText = "voting";
 							}
             })
-          } else alert("proposal check returned false");
+          } else alert("proposal check returned false; input/s wrong");
         })
       }
 		} else { //have voted
-			if (num_votes >= min_quor && cum_vote >= maj_mar && Date.now() > proposal[3]*1e3) { //set up execute button
-				if (proposal_elements[6].innerText === "EXECUTE") return;
-	      proposal_elements[6].innerHTML = "<button id=" + ID + "ep>EXECUTE</button>";
-	      document.getElementById(ID + "ep").onclick = () => {
-					document.getElementById(ID + "ep").disabled = true;
-	        congress.executeProposal(ID, App.get_bytecode(proposal[2]));
-	      }
-			} else {
+			if (num_votes >= min_quor && cum_vote >= maj_mar) { //if executable at end of debating period
+				function write_exe_butt() {
+				  proposal_elements[6].innerHTML = "<button id=" + ID + "ep>EXECUTE</button>";
+		      document.getElementById(ID + "ep").onclick = () => {
+						document.getElementById(ID + "ep").disabled = true;
+						if (["change_voting_rules","add_member","remove_member"].includes(proposal[2])) bytecode = App.get_bytecode(proposal[2]);
+		        congress.executeProposal(ID,bytecode);
+		      }
+				}
+				if (proposal[3]*1e3 > Date.now()) { //still debating time left
+					setTimeout(() => write_exe_butt(),(proposal[3]*1e3 - Date.now()));
+					proposal_elements[6].innerText = "voted";
+			  } else write_exe_butt(); //debating time finished, write execute button
+			} else { //not executable like this at end of debating period
 				if (proposal_elements[6].innerText === "voted") return;
 				proposal_elements[6].innerText = "voted";
 			}
@@ -157,11 +164,8 @@ window.App = {
         break;
       case "remove_member":
         return congr_iface.encodeFunctionData("removeMember", [prompt("address of member to be removed?")]);
-				break;
-			default:
-				return "0x";
-    }
-	}
+  	}
+  }
 }
 window.addEventListener('load', () => {
 	document.getElementById('connect_button').onclick = async () => {
