@@ -13,7 +13,7 @@ module.exports = [
   {
     name: "client",
     entry: {
-      index: './src/javascripts/index.js',
+      index: './src/javascripts/app.js',
     },
     plugins: [
       /*new webpack.optimize.OccurrenceOrderPlugin(),
@@ -23,19 +23,10 @@ module.exports = [
       }),*/
     ],
     output: {
-      filename: 'bundle.js',
+      filename: 'app.js',
       path: path.resolve(__dirname, 'app/public'),
     },
-    module: {
-      rules: [{
-        test: /\.css$/,
-        use: [
-	  'style-loader',
-	  'css-loader'
-        ]
-      }]
-    },
-    mode: 'development'
+    mode: 'production'
   }
 ]
 

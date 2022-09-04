@@ -1,6 +1,6 @@
 {
   "name": "congress",
-	"sideEffects": ["*.css"],
+  "sideEffects": false,
   "version": "1.0.0",
   "description": "multi-sig contract interaction",
   "browser": "/app/pubic/app.js",
@@ -8,11 +8,14 @@
     "ethers": "^5.6.4"
   },
   "devDependencies": {
+    "webpack": "latest",
+    "webpack-cli": "latest",
+    "webpack-dev-server": "^4.10.1"
   },
   "scripts": {
-		"start": "esbuild --bundle src/javascripts/app.js --splitting --servedir=app/public  --format=esm --outdir=app/public/",
-		"build": "esbuild --bundle src/javascripts/app.js  --splitting  --outdir=app/public --format=esm --minify",
-		"serve": "esbuild --servedir=app/public"
+    "start": "esbuild --bundle src/javascripts/app.js --splitting --servedir=app/public  --format=esm --outdir=app/public/",
+    "build": "esbuild --bundle src/javascripts/app.js  --splitting  --outdir=app/public --format=esm --minify",
+    "serve": "esbuild --servedir=app/public"
   },
   "repository": {
     "type": "git",
