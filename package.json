@@ -9,12 +9,11 @@
   },
   "devDependencies": {
     "webpack": "latest",
-    "webpack-cli": "latest",
-    "webpack-dev-server": "^4.10.1"
+    "webpack-cli": "latest"
   },
   "scripts": {
-    "start": "esbuild --bundle src/javascripts/app.js --splitting --servedir=app/public  --format=esm --outdir=app/public/",
-    "build": "esbuild --bundle src/javascripts/app.js  --splitting  --outdir=app/public --format=esm --minify",
+    "start": "esbuild --bundle src/javascripts/app.js --servedir=app/public --outdir=app/public/",
+    "build": "webpack",
     "serve": "esbuild --servedir=app/public"
   },
   "repository": {
