@@ -17,32 +17,37 @@ window.App = {
     congress.members(account).then(res => {
 			if (!res[0]) return;  //NOT A MEMBER
 			//   !!!!MEMBER!!!!
-			document.getElementById("forMembers").style.display = 'inline-block';
+			forMembers.style.display = 'inline-block';
 			//WRITE PREVIOUS PROPOSALS
+			function watch_for_votes() {
+				congress.on('LogVoted', (id,vote,voter) => {
+					let voted = false;
+					if (voter.toLowerCase() === account.toLowerCase()) voted = true;
+					App.write_proposal(id,voted);
+				})
+			}
 			congress.queryFilter('LogProposalAdded', startBlock, 'latest').then(proposals => {
-				proposals.forEach(proposal => {
-					const ID = Number(proposal.args.ID);
-          const prop_tallied = congress.filters.LogProposalTallied(ID);
-					congress.queryFilter(prop_tallied ,proposal.blockNumber, 'latest').then(tallied => {
-						if (tallied.length !== 0) return; //proposal tallied
-	      		const filter = congress.filters.LogVoted(ID,null,account);
-						congress.queryFilter(filter,proposal.blockNumber,'latest').then(res => { //have you voted?
-							if (res.length === 1)	App.write_proposal(ID,true);
-							else App.write_proposal(ID,false);
+				if (proposals.length > 0) {
+					watch_for_votes();
+					proposals.forEach(proposal => {
+						const ID = Number(proposal.args.ID);
+	          const prop_tallied = congress.filters.LogProposalTallied(ID);
+						congress.queryFilter(prop_tallied ,proposal.blockNumber, 'latest').then(tallied => {
+							if (tallied.length !== 0) return; //proposal tallied
+		      		const filter = congress.filters.LogVoted(ID,null,account);
+							congress.queryFilter(filter,proposal.blockNumber,'latest').then(res => { //have you voted?
+								if (res.length === 1)	App.write_proposal(ID,true);
+								else App.write_proposal(ID,false);
+							})
 						})
 					})
-				})
+				}
 			})
 			//WATCH FOR AND WRITE NEW PROPOSAL
 			congress.on('LogProposalAdded', (ID) => {
 				const id = Number(ID);
 				App.write_proposal(id,false);
-			})
-			//WATCH FOR VOTES
-			congress.on('LogVoted', (id,vote,voter) => {
-				let voted = false;
-				if (voter.toLowerCase() === account.toLowerCase()) voted = true;
-				App.write_proposal(id,voted);
+				if (activeProposals.children === 0) watch_for_votes();
 			})
 			//WATCH FOR PROPOSAL TALLIED
 			congress.on("LogProposalTallied", (ID) => {
@@ -56,25 +61,25 @@ window.App = {
 				Array.from(activeProposals.children).forEach(prop => App.write_proposal(prop.id,false));
 			})
 			//NEW PROPOSAL ONCLICKS
-			document.getElementById("send_eth").onclick = async () => {
-			  document.getElementById("send_eth").disabled = true;
+			send_eth.onclick = async () => {
+			  send_eth.disabled = true;
 			  const beneficiary = account; //prompt("address beneficiary?",account);
 				const amount = prompt("amount ether?");
-				if (amount === null) {document.getElementById("send_eth").disabled = false; return;}
+				if (amount === null) {send_eth.disabled = false; return;}
 			  const weiAmount = BigNumber.from(10).pow(18).mul(Number(amount));
 			  const jobDescription = prompt("job description?");
 				congress.newProposal(beneficiary, weiAmount, jobDescription, "0x");
-				document.getElementById("send_eth").disabled = false;
+				send_eth.disabled = false;
 			}
-			document.getElementById("left").onclick = () => {
-				document.getElementById("contract").style.display = "none";
-				document.getElementById("right").style.display = "inline-block";
-				document.getElementById("left").style.display = "none";
+			left.onclick = () => {
+				contract.style.display = "none";
+				right.style.display = "inline-block";
+				left.style.display = "none";
 			}
-			document.getElementById("right").onclick = () => {
-				document.getElementById("contract").style.display = "inline-block";
-				document.getElementById("right").style.display = "none";
-				document.getElementById("left").style.display = "inline-block";
+			right.onclick = () => {
+				contract.style.display = "inline-block";
+				right.style.display = "none";
+				left.style.display = "inline-block";
 				//contract functions: add_member remove_member, change_voting_rules
 				["add_member","remove_member","change_voting_rules"].forEach(action => {
 					document.getElementById(action).onclick = () => {
@@ -101,7 +106,7 @@ window.App = {
 	    proposal_elements[1].innerText = proposal[0]; //recipient
 	    proposal_elements[2].innerText = Number(proposal[1])/1e18; //amount
 	    proposal_elements[3].innerText = proposal[2]; //description
-		  document.getElementById("activeProposals").append(_proposal);
+		  activeProposals.append(_proposal);
 		} else { //already written
 			proposal_elements = document.getElementById(ID).getElementsByTagName('td');
 			if (["voted","EXECUTE"].includes(proposal_elements[6].innerText)) voted = true;
@@ -113,7 +118,7 @@ window.App = {
 		(num_votes >= min_quor) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 	  (cum_vote >= maj_mar) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
     let bytecode = "0x";
-		if (!voted) { //have NOT voted so set up vote button even if contract executable
+		if (!voted) { //have NOT voted so set up vote button. If executable vote could make proposal unexecutable
 			if (proposal_elements[6].innerText === "VOTE") return; //no point rewriting vote button
 	  	proposal_elements[6].innerHTML = "<button id=" + ID + "cp>VOTE</button>";
       document.getElementById(ID + "cp").onclick = () => { //check if member knows proposal
@@ -167,8 +172,8 @@ window.App = {
   }
 }
 window.addEventListener('load', () => {
-	document.getElementById('connect_button').onclick = async () => {
-		document.getElementById('connect_button').style.display = 'none';
+	connect_button.onclick = () => {
+		connect_button.style.display = 'none';
 		const provider =  new providers.Web3Provider(window.ethereum);
 		ethereum.request({method:'eth_requestAccounts'}).then(accounts => {
 		  const account = accounts[0];
