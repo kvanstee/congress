@@ -27,38 +27,26 @@ window.App = {
 				})
 			}
 			congress.queryFilter('LogProposalAdded', startBlock, 'latest').then(proposals => {
-				if (proposals.length > 0) {
-					watch_for_votes();
-					proposals.forEach(proposal => {
-						const ID = Number(proposal.args.ID);
-	          const prop_tallied = congress.filters.LogProposalTallied(ID);
-						congress.queryFilter(prop_tallied ,proposal.blockNumber, 'latest').then(tallied => {
-							if (tallied.length !== 0) return; //proposal tallied
-		      		const filter = congress.filters.LogVoted(ID,null,account);
-							congress.queryFilter(filter,proposal.blockNumber,'latest').then(res => { //have you voted?
-								if (res.length === 1)	App.write_proposal(ID,true);
-								else App.write_proposal(ID,false);
-							})
+				if (proposals.length === 0) return;
+				watch_for_votes();
+				proposals.forEach(proposal => {
+					const ID = Number(proposal.args.ID);
+          const prop_tallied = congress.filters.LogProposalTallied(ID);
+					congress.queryFilter(prop_tallied ,proposal.blockNumber, 'latest').then(tallied => {
+						if (tallied.length !== 0) return; //proposal tallied
+	      		const filter = congress.filters.LogVoted(ID,null,account);
+						congress.queryFilter(filter,proposal.blockNumber,'latest').then(res => { //have you voted?
+							if (res.length === 1)	App.write_proposal(ID,true);
+							else App.write_proposal(ID,false);
 						})
 					})
-				}
+				})
 			})
 			//WATCH FOR AND WRITE NEW PROPOSAL
 			congress.on('LogProposalAdded', (ID) => {
 				const id = Number(ID);
+				if (congress.listenerCount("LogVoted") === 0) watch_for_votes();
 				App.write_proposal(id,false);
-				if (activeProposals.children === 0) watch_for_votes();
-			})
-			//WATCH FOR PROPOSAL TALLIED
-			congress.on("LogProposalTallied", (ID) => {
-				if (document.getElementById(ID) === null) return;
-				document.getElementById(ID).getElementsByTagName("td")[6].innerText = "executed";
-			})
-			//WATCH FOR CHANGE OF RULES
-			congress.on('LogChangeOfRules', (new_quor,new_deb,new_mar) => {
-				min_quor = new_quor;
-				maj_mar = new_mar;
-				Array.from(activeProposals.children).forEach(prop => App.write_proposal(prop.id,false));
 			})
 			//NEW PROPOSAL ONCLICKS
 			send_eth.onclick = async () => {
@@ -71,16 +59,16 @@ window.App = {
 				congress.newProposal(beneficiary, weiAmount, jobDescription, "0x");
 				send_eth.disabled = false;
 			}
+			//contract functions: add_member remove_member, change_voting_rules
 			left.onclick = () => {
-				contract.style.display = "none";
+				contract.style.display = "none"; //remove contract function buttons
 				right.style.display = "inline-block";
 				left.style.display = "none";
 			}
 			right.onclick = () => {
-				contract.style.display = "inline-block";
+				contract.style.display = "inline-block"; //display contract function buttons
 				right.style.display = "none";
 				left.style.display = "inline-block";
-				//contract functions: add_member remove_member, change_voting_rules
 				["add_member","remove_member","change_voting_rules"].forEach(action => {
 					document.getElementById(action).onclick = () => {
 					  congress.newProposal(congress_addr,0,action,App.get_bytecode(action));
@@ -111,14 +99,18 @@ window.App = {
 			proposal_elements = document.getElementById(ID).getElementsByTagName('td');
 			if (["voted","EXECUTE"].includes(proposal_elements[6].innerText)) voted = true;
 		}
+    let bytecode = "0x";
 		let num_votes = Number(proposal[6]);
 		let cum_vote = Number(proposal[7]);
 		proposal_elements[4].innerText = num_votes;
 		proposal_elements[5].innerText = cum_vote;
 		(num_votes >= min_quor) ? proposal_elements[4].style.color="green" : proposal_elements[4].style.color="red";
 	  (cum_vote >= maj_mar) ? proposal_elements[5].style.color="green" : proposal_elements[5].style.color="red";
-    let bytecode = "0x";
-		if (!voted) { //have NOT voted so set up vote button. If executable vote could make proposal unexecutable
+		if (cum_vote >= maj_mar && num_votes >= min_quor) { //set up listeners
+			if (congress.listenerCount("LogProposalTallied") === 0) App.watch_for_proposal_tallied();
+			if (proposal[2] === "change_voting_rules") App.watch_for_change_of_rules();
+		}
+		if (!voted) { //have NOT voted so set up vote button. If executable, vote could make proposal unexecutable
 			if (proposal_elements[6].innerText === "VOTE") return; //no point rewriting vote button
 	  	proposal_elements[6].innerHTML = "<button id=" + ID + "cp>VOTE</button>";
       document.getElementById(ID + "cp").onclick = () => { //check if member knows proposal
@@ -155,6 +147,21 @@ window.App = {
 				proposal_elements[6].innerText = "voted";
 			}
 		}
+	},
+	//WATCH FOR PROPOSAL TALLIED
+	watch_for_proposal_tallied: () => {
+		congress.on("LogProposalTallied", (ID) => {
+			if (document.getElementById(ID) === null) return;
+			document.getElementById(ID).getElementsByTagName("td")[6].innerText = "executed";
+		})
+	},
+	//WATCH FOR CHANGE OF RULES
+	watch_for_change_of_rules: () => {
+		congress.on('LogChangeOfRules', (new_quor,new_deb,new_mar) => {
+			min_quor = new_quor;
+			maj_mar = new_mar;
+			Array.from(activeProposals.children).forEach(prop => App.write_proposal(prop.id,false));
+		})
 	},
 	//GET BYTECODE
 	get_bytecode: async (job_description) => {
