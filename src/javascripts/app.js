@@ -17,7 +17,7 @@ window.App = {
     congress.members(account).then(res => {
 			if (!res[0]) return;  //NOT A MEMBER
 			//   !!!!MEMBER!!!!
-			forMembers.style.display = 'inline-block';
+			document.getElementById("forMembers").style.display = 'inline-block';
 			//WRITE PREVIOUS PROPOSALS
 			function watch_for_votes() {
 				congress.on('LogVoted', (id,vote,voter) => {
@@ -49,26 +49,26 @@ window.App = {
 				App.write_proposal(id,false);
 			})
 			//NEW PROPOSAL ONCLICKS
-			send_eth.onclick = async () => {
-			  send_eth.disabled = true;
+			document.getElementById("send_eth").onclick = async () => {
+			  document.getElementById("send_eth").disabled = true;
 			  const beneficiary = account; //prompt("address beneficiary?",account);
 				const amount = prompt("amount ether?");
 				if (amount === null) {send_eth.disabled = false; return;}
 			  const weiAmount = BigNumber.from(10).pow(18).mul(Number(amount));
 			  const jobDescription = prompt("job description?");
 				congress.newProposal(beneficiary, weiAmount, jobDescription, "0x");
-				send_eth.disabled = false;
+				document.getElementById("send_eth").disabled = false;
 			}
 			//contract functions: add_member remove_member, change_voting_rules
-			left.onclick = () => {
-				contract.style.display = "none"; //remove contract function buttons
-				right.style.display = "inline-block";
-				left.style.display = "none";
+			document.getElementById("left").onclick = () => {
+				document.getElementById("contract").style.display = "none"; //remove contract function buttons
+				document.getElementById("right").style.display = "inline-block";
+				document.getElementById("left").style.display = "none";
 			}
-			right.onclick = () => {
-				contract.style.display = "inline-block"; //display contract function buttons
-				right.style.display = "none";
-				left.style.display = "inline-block";
+			document.getElementById("right").onclick = () => {
+				document.getElementById("contract").style.display = "inline-block"; //display contract function buttons
+				document.getElementById("right").style.display = "none";
+				document.getElementById("left").style.display = "inline-block";
 				["add_member","remove_member","change_voting_rules"].forEach(action => {
 					document.getElementById(action).onclick = () => {
 					  congress.newProposal(congress_addr,0,action,App.get_bytecode(action));
@@ -179,8 +179,8 @@ window.App = {
   }
 }
 window.addEventListener('load', () => {
-	connect_button.onclick = () => {
-		connect_button.style.display = 'none';
+	document.getElementById("connect_button").onclick = () => {
+		document.getElementById("connect_button").style.display = 'none';
 		const provider =  new providers.Web3Provider(window.ethereum);
 		ethereum.request({method:'eth_requestAccounts'}).then(accounts => {
 		  const account = accounts[0];
