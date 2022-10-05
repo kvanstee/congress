@@ -95,9 +95,9 @@ window.App = {
 	    proposal_elements[2].innerText = Number(proposal[1])/1e18; //amount
 	    proposal_elements[3].innerText = proposal[2]; //description
 		  activeProposals.append(_proposal);
-		} else { //already written
+		} else { //proposal already written
 			proposal_elements = document.getElementById(ID).getElementsByTagName('td');
-			if (["voted","EXECUTE"].includes(proposal_elements[6].innerText)) voted = true;
+			if (["voted","voting","EXECUTE"].includes(proposal_elements[6].innerText)) voted = true;
 		}
     let bytecode = "0x";
 		let num_votes = Number(proposal[6]);
